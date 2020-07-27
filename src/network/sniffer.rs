@@ -1,8 +1,7 @@
 use pnet::datalink::{self, NetworkInterface};
 use pnet::packet::arp::ArpPacket;
 use pnet::packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
-#[allow(unused_imports)]
-use pnet::packet::icmp::{echo_reply, echo_request, IcmpPacket, IcmpTypes};
+use pnet::packet::icmp::IcmpPacket;
 use pnet::packet::icmpv6::Icmpv6Packet;
 use pnet::packet::ip::{IpNextHeaderProtocol, IpNextHeaderProtocols};
 use pnet::packet::ipv4::Ipv4Packet;
@@ -18,7 +17,7 @@ use std::sync::{Arc, RwLock};
 
 #[derive(Clone, Copy, Debug)]
 pub enum PacketType {
-    TCP = 0,
+    TCP,
     UDP,
     ICMP,
     ICMPv6,
@@ -60,22 +59,13 @@ fn handle_udp_packet(
     let udp = UdpPacket::owned(packet.to_vec());
 
     if let Some(udp) = udp {
-        // println!(
-        //     "[{}]: UDP Packet: {}:{} > {}:{}; length: {}",
-        //     interface_name,
-        //     source,
-        //     udp.get_source(),
-        //     destination,
-        //     udp.get_destination(),
-        //     udp.get_length()
-        // );
-        let temp = PacketInfo::new(
+        let udp_packet_info = PacketInfo::new(
             PacketType::UDP,
             Some(source),
             Some(destination),
             Box::new(udp),
         );
-        packets.write().unwrap().push(temp);
+        packets.write().unwrap().push(udp_packet_info);
     } else {
         // println!("[{}]: Malformed UDP Packet", interface_name);
     }
@@ -91,6 +81,7 @@ fn handle_icmp_packet(
 ) {
     let icmp_packet = IcmpPacket::owned(packet.to_vec());
     if let Some(icmp_packet) = icmp_packet {
+        // TODO: Print this information in the UI
         // match icmp_packet.get_icmp_type() {
         //     IcmpTypes::EchoReply => {
         //         let echo_reply_packet = echo_reply::EchoReplyPacket::new(packet).unwrap();
@@ -144,20 +135,13 @@ fn handle_icmpv6_packet(
 ) {
     let icmpv6_packet = Icmpv6Packet::owned(packet.to_vec());
     if let Some(icmpv6_packet) = icmpv6_packet {
-        // println!(
-        //     "[{}]: ICMPv6 packet {} -> {} (type={:?})",
-        //     interface_name,
-        //     source,
-        //     destination,
-        //     icmpv6_packet.get_icmpv6_type()
-        // )
-        let temp = PacketInfo::new(
+        let icmpv6_packet_info = PacketInfo::new(
             PacketType::ICMPv6,
             Some(source),
             Some(destination),
             Box::new(icmpv6_packet),
         );
-        packets.write().unwrap().push(temp);
+        packets.write().unwrap().push(icmpv6_packet_info);
     } else {
         // println!("[{}]: Malformed ICMPv6 Packet", interface_name);
     }
@@ -173,22 +157,13 @@ fn handle_tcp_packet(
 ) {
     let tcp = TcpPacket::owned(packet.to_vec());
     if let Some(tcp) = tcp {
-        // println!(
-        //     "[{}]: TCP Packet: {}:{} > {}:{}; length: {}",
-        //     interface_name,
-        //     source,
-        //     tcp.get_source(),
-        //     destination,
-        //     tcp.get_destination(),
-        //     packet.len()
-        // );
-        let temp = PacketInfo::new(
+        let tcp_packet_info = PacketInfo::new(
             PacketType::TCP,
             Some(source),
             Some(destination),
             Box::new(tcp),
         );
-        packets.write().unwrap().push(temp);
+        packets.write().unwrap().push(tcp_packet_info);
     } else {
         // println!("[{}]: Malformed TCP Packet", interface_name);
     }
@@ -260,23 +235,14 @@ fn handle_ipv6_packet(
 }
 
 fn handle_arp_packet(
-    interface_name: &str,
+    _interface_name: &str,
     ethernet: &EthernetPacket,
     packets: &Arc<RwLock<Vec<PacketInfo>>>,
 ) {
     let header = ArpPacket::owned(ethernet.payload().to_vec());
     if let Some(header) = header {
-        // println!(
-        //     "[{}]: ARP packet: {}({}) > {}({}); operation: {:?}",
-        //     interface_name,
-        //     ethernet.get_source(),
-        //     header.get_sender_proto_addr(),
-        //     ethernet.get_destination(),
-        //     header.get_target_proto_addr(),
-        //     header.get_operation()
-        // );
-        let temp = PacketInfo::new(PacketType::ARP, None, None, Box::new(header));
-        packets.write().unwrap().push(temp);
+        let arp_packet_info = PacketInfo::new(PacketType::ARP, None, None, Box::new(header));
+        packets.write().unwrap().push(arp_packet_info);
     } else {
         // println!("[{}]: Malformed ARP Packet", interface_name);
     }
@@ -296,28 +262,28 @@ fn handle_ethernet_frame(
     }
 }
 
-pub fn start_packet_sniffer(
+pub fn get_valid_interface(
     iface_name: String,
+    interfaces: Vec<NetworkInterface>,
+) -> Option<NetworkInterface> {
+    let interface_names_match = |iface: &NetworkInterface| iface.name == iface_name;
+    let interface = interfaces.into_iter().filter(interface_names_match).next();
+
+    interface
+}
+
+pub fn start_packet_sniffer(
+    interface: NetworkInterface,
     packets: Arc<RwLock<Vec<PacketInfo>>>,
     running: Arc<AtomicBool>,
 ) {
     use pnet::datalink::Channel::Ethernet;
 
-    let interface_names_match = |iface: &NetworkInterface| iface.name == iface_name;
-
-    // Find the network interface with the provided name
-    let interfaces = datalink::interfaces();
-    let interface = interfaces
-        .into_iter()
-        .filter(interface_names_match)
-        .next()
-        .unwrap_or_else(|| panic!("No such network interface: {}", iface_name));
-
     // Create a channel to receive on
     let (_, mut rx) = match datalink::channel(&interface, Default::default()) {
         Ok(Ethernet(tx, rx)) => (tx, rx),
-        Ok(_) => panic!("packetdump: unhandled channel type: {}"),
-        Err(e) => panic!("packetdump: unable to create channel: {}", e),
+        Ok(_) => panic!("Unhandled channel type: {}"),
+        Err(e) => panic!("Unable to create channel: {}", e),
     };
 
     while running.load(Ordering::Relaxed) {
@@ -370,7 +336,7 @@ pub fn start_packet_sniffer(
                 }
                 handle_ethernet_frame(&interface, &EthernetPacket::new(packet).unwrap(), &packets);
             }
-            Err(e) => panic!("packetdump: unable to receive packet: {}", e),
+            Err(e) => panic!("Unable to receive packet: {}", e),
         }
     }
 }
