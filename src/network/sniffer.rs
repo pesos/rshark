@@ -31,6 +31,12 @@ pub struct PacketInfo {
     pub packet_data: Box<dyn Packet + Send + Sync>,
 }
 
+pub struct NetworkInfo {
+    pub packets: Vec<PacketInfo>,
+    pub captured_packets: u64,
+    pub dropped_packets: u64,
+}
+
 impl PacketInfo {
     fn new(
         packet_type: PacketType,
@@ -48,13 +54,27 @@ impl PacketInfo {
     }
 }
 
+impl NetworkInfo {
+    pub fn new() -> Self {
+        let packets: Vec<PacketInfo> = Vec::new();
+        let captured_packets = 0u64;
+        let dropped_packets = 0u64;
+
+        NetworkInfo {
+            packets,
+            captured_packets,
+            dropped_packets,
+        }
+    }
+}
+
 #[allow(unused_variables)]
 fn handle_udp_packet(
     interface_name: &str,
     source: IpAddr,
     destination: IpAddr,
     packet: &[u8],
-    packets: &Arc<RwLock<Vec<PacketInfo>>>,
+    net_info: &Arc<RwLock<NetworkInfo>>,
 ) {
     let udp = UdpPacket::owned(packet.to_vec());
 
@@ -65,9 +85,10 @@ fn handle_udp_packet(
             Some(destination),
             Box::new(udp),
         );
-        packets.write().unwrap().push(udp_packet_info);
+        net_info.write().unwrap().packets.push(udp_packet_info);
+        net_info.write().unwrap().captured_packets += 1;
     } else {
-        // println!("[{}]: Malformed UDP Packet", interface_name);
+        net_info.write().unwrap().dropped_packets += 1;
     }
 }
 
@@ -77,7 +98,7 @@ fn handle_icmp_packet(
     source: IpAddr,
     destination: IpAddr,
     packet: &[u8],
-    packets: &Arc<RwLock<Vec<PacketInfo>>>,
+    net_info: &Arc<RwLock<NetworkInfo>>,
 ) {
     let icmp_packet = IcmpPacket::owned(packet.to_vec());
     if let Some(icmp_packet) = icmp_packet {
@@ -113,15 +134,16 @@ fn handle_icmp_packet(
         //         icmp_packet.get_icmp_type()
         //     ),
         // }
-        let temp = PacketInfo::new(
+        let icmp_packet_info = PacketInfo::new(
             PacketType::ICMP,
             Some(source),
             Some(destination),
             Box::new(icmp_packet),
         );
-        packets.write().unwrap().push(temp);
+        net_info.write().unwrap().packets.push(icmp_packet_info);
+        net_info.write().unwrap().captured_packets += 1;
     } else {
-        // println!("[{}]: Malformed ICMP Packet", interface_name);
+        net_info.write().unwrap().dropped_packets += 1;
     }
 }
 
@@ -131,7 +153,7 @@ fn handle_icmpv6_packet(
     source: IpAddr,
     destination: IpAddr,
     packet: &[u8],
-    packets: &Arc<RwLock<Vec<PacketInfo>>>,
+    net_info: &Arc<RwLock<NetworkInfo>>,
 ) {
     let icmpv6_packet = Icmpv6Packet::owned(packet.to_vec());
     if let Some(icmpv6_packet) = icmpv6_packet {
@@ -141,9 +163,10 @@ fn handle_icmpv6_packet(
             Some(destination),
             Box::new(icmpv6_packet),
         );
-        packets.write().unwrap().push(icmpv6_packet_info);
+        net_info.write().unwrap().packets.push(icmpv6_packet_info);
+        net_info.write().unwrap().captured_packets += 1;
     } else {
-        // println!("[{}]: Malformed ICMPv6 Packet", interface_name);
+        net_info.write().unwrap().dropped_packets += 1;
     }
 }
 
@@ -153,7 +176,7 @@ fn handle_tcp_packet(
     source: IpAddr,
     destination: IpAddr,
     packet: &[u8],
-    packets: &Arc<RwLock<Vec<PacketInfo>>>,
+    net_info: &Arc<RwLock<NetworkInfo>>,
 ) {
     let tcp = TcpPacket::owned(packet.to_vec());
     if let Some(tcp) = tcp {
@@ -163,9 +186,10 @@ fn handle_tcp_packet(
             Some(destination),
             Box::new(tcp),
         );
-        packets.write().unwrap().push(tcp_packet_info);
+        net_info.write().unwrap().packets.push(tcp_packet_info);
+        net_info.write().unwrap().captured_packets += 1;
     } else {
-        // println!("[{}]: Malformed TCP Packet", interface_name);
+        net_info.write().unwrap().dropped_packets += 1;
     }
 }
 
@@ -175,29 +199,31 @@ fn handle_transport_protocol(
     destination: IpAddr,
     protocol: IpNextHeaderProtocol,
     packet: &[u8],
-    packets: &Arc<RwLock<Vec<PacketInfo>>>,
+    net_info: &Arc<RwLock<NetworkInfo>>,
 ) {
     match protocol {
         IpNextHeaderProtocols::Udp => {
-            handle_udp_packet(interface_name, source, destination, packet, packets)
+            handle_udp_packet(interface_name, source, destination, packet, net_info)
         }
         IpNextHeaderProtocols::Tcp => {
-            handle_tcp_packet(interface_name, source, destination, packet, packets)
+            handle_tcp_packet(interface_name, source, destination, packet, net_info)
         }
         IpNextHeaderProtocols::Icmp => {
-            handle_icmp_packet(interface_name, source, destination, packet, packets)
+            handle_icmp_packet(interface_name, source, destination, packet, net_info)
         }
         IpNextHeaderProtocols::Icmpv6 => {
-            handle_icmpv6_packet(interface_name, source, destination, packet, packets)
+            handle_icmpv6_packet(interface_name, source, destination, packet, net_info)
         }
-        _ => {}
+        _ => {
+            net_info.write().unwrap().dropped_packets += 1;
+        }
     }
 }
 
 fn handle_ipv4_packet(
     interface_name: &str,
     ethernet: &EthernetPacket,
-    packets: &Arc<RwLock<Vec<PacketInfo>>>,
+    net_info: &Arc<RwLock<NetworkInfo>>,
 ) {
     let header = Ipv4Packet::new(ethernet.payload());
     if let Some(header) = header {
@@ -207,17 +233,17 @@ fn handle_ipv4_packet(
             IpAddr::V4(header.get_destination()),
             header.get_next_level_protocol(),
             header.payload(),
-            packets,
+            net_info,
         );
     } else {
-        // println!("[{}]: Malformed IPv4 Packet", interface_name);
+        net_info.write().unwrap().dropped_packets += 1;
     }
 }
 
 fn handle_ipv6_packet(
     interface_name: &str,
     ethernet: &EthernetPacket,
-    packets: &Arc<RwLock<Vec<PacketInfo>>>,
+    net_info: &Arc<RwLock<NetworkInfo>>,
 ) {
     let header = Ipv6Packet::new(ethernet.payload());
     if let Some(header) = header {
@@ -227,38 +253,41 @@ fn handle_ipv6_packet(
             IpAddr::V6(header.get_destination()),
             header.get_next_header(),
             header.payload(),
-            packets,
+            net_info,
         );
     } else {
-        // println!("[{}]: Malformed IPv6 Packet", interface_name);
+        net_info.write().unwrap().dropped_packets += 1;
     }
 }
 
 fn handle_arp_packet(
     _interface_name: &str,
     ethernet: &EthernetPacket,
-    packets: &Arc<RwLock<Vec<PacketInfo>>>,
+    net_info: &Arc<RwLock<NetworkInfo>>,
 ) {
     let header = ArpPacket::owned(ethernet.payload().to_vec());
     if let Some(header) = header {
         let arp_packet_info = PacketInfo::new(PacketType::ARP, None, None, Box::new(header));
-        packets.write().unwrap().push(arp_packet_info);
+        net_info.write().unwrap().packets.push(arp_packet_info);
+        net_info.write().unwrap().captured_packets += 1;
     } else {
-        // println!("[{}]: Malformed ARP Packet", interface_name);
+        net_info.write().unwrap().dropped_packets += 1;
     }
 }
 
 fn handle_ethernet_frame(
     interface: &NetworkInterface,
     ethernet: &EthernetPacket,
-    packets: &Arc<RwLock<Vec<PacketInfo>>>,
+    net_info: &Arc<RwLock<NetworkInfo>>,
 ) {
     let interface_name = &interface.name[..];
     match ethernet.get_ethertype() {
-        EtherTypes::Ipv4 => handle_ipv4_packet(interface_name, ethernet, packets),
-        EtherTypes::Ipv6 => handle_ipv6_packet(interface_name, ethernet, packets),
-        EtherTypes::Arp => handle_arp_packet(interface_name, ethernet, packets),
-        _ => {}
+        EtherTypes::Ipv4 => handle_ipv4_packet(interface_name, ethernet, net_info),
+        EtherTypes::Ipv6 => handle_ipv6_packet(interface_name, ethernet, net_info),
+        EtherTypes::Arp => handle_arp_packet(interface_name, ethernet, net_info),
+        _ => {
+            net_info.write().unwrap().dropped_packets += 1;
+        }
     }
 }
 
@@ -274,7 +303,7 @@ pub fn get_valid_interface(
 
 pub fn start_packet_sniffer(
     interface: NetworkInterface,
-    packets: Arc<RwLock<Vec<PacketInfo>>>,
+    net_info: Arc<RwLock<NetworkInfo>>,
     running: Arc<AtomicBool>,
 ) {
     use pnet::datalink::Channel::Ethernet;
@@ -317,7 +346,7 @@ pub fn start_packet_sniffer(
                             handle_ethernet_frame(
                                 &interface,
                                 &fake_ethernet_frame.to_immutable(),
-                                &packets,
+                                &net_info,
                             );
                             continue;
                         } else if version == 6 {
@@ -328,13 +357,13 @@ pub fn start_packet_sniffer(
                             handle_ethernet_frame(
                                 &interface,
                                 &fake_ethernet_frame.to_immutable(),
-                                &packets,
+                                &net_info,
                             );
                             continue;
                         }
                     }
                 }
-                handle_ethernet_frame(&interface, &EthernetPacket::new(packet).unwrap(), &packets);
+                handle_ethernet_frame(&interface, &EthernetPacket::new(packet).unwrap(), &net_info);
             }
             Err(e) => panic!("Unable to receive packet: {}", e),
         }

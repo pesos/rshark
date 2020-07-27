@@ -11,7 +11,7 @@ use std::sync::{Arc, RwLock};
 use std::thread;
 
 use display::draw_ui;
-use network::{get_valid_interface, start_packet_sniffer, PacketInfo};
+use network::{get_valid_interface, start_packet_sniffer, NetworkInfo};
 
 use pnet::datalink::interfaces;
 
@@ -33,21 +33,21 @@ fn main() {
     };
 
     let running = Arc::new(AtomicBool::new(true));
-    let packets = Arc::new(RwLock::new(Vec::<PacketInfo>::new()));
+    let net_info = Arc::new(RwLock::new(NetworkInfo::new()));
 
-    let net_packets = packets.clone();
-    let read_packets = packets.clone();
+    let network_net_info = net_info.clone();
+    let ui_net_info = net_info.clone();
 
     let network_running = running.clone();
 
     let network_sniffer = thread::spawn(|| {
-        start_packet_sniffer(interface, net_packets, network_running);
+        start_packet_sniffer(interface, network_net_info, network_running);
     });
 
     let ui_running = running.clone();
 
     let packets_len = thread::spawn(|| {
-        draw_ui(read_packets, ui_running).expect("Error!");
+        draw_ui(ui_net_info, ui_running).expect("Error!");
     });
 
     network_sniffer.join().unwrap();

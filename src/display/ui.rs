@@ -3,15 +3,15 @@ use std::io::{self};
 use std::sync::{atomic::AtomicBool, atomic::Ordering, Arc, RwLock};
 
 use super::events::{Event, Events};
-use crate::network::{PacketInfo, PacketType};
+use crate::network::{NetworkInfo, PacketInfo, PacketType};
 
 use termion::{event::Key, raw::IntoRawMode};
 use tui::{
     backend::TermionBackend,
-    layout::{Constraint, Direction, Layout},
+    layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
     text::{Span, Spans},
-    widgets::{Block, Borders, List, ListItem, ListState},
+    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
     Terminal,
 };
 
@@ -21,7 +21,7 @@ use pnet::packet::{
 };
 
 pub fn draw_ui(
-    packets: Arc<RwLock<Vec<PacketInfo>>>,
+    net_info: Arc<RwLock<NetworkInfo>>,
     running: Arc<AtomicBool>,
 ) -> Result<(), Box<dyn Error>> {
     let stdout = io::stdout().into_raw_mode()?;
@@ -40,7 +40,14 @@ pub fn draw_ui(
         terminal.draw(|f| {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
-                .constraints([Constraint::Percentage(80), Constraint::Percentage(10)].as_ref())
+                .constraints(
+                    [
+                        Constraint::Percentage(80),
+                        Constraint::Percentage(15),
+                        Constraint::Percentage(5),
+                    ]
+                    .as_ref(),
+                )
                 .split(f.size());
 
             let header = Spans::from(Span::styled(
@@ -48,9 +55,10 @@ pub fn draw_ui(
                 Style::default().fg(Color::Black).bg(Color::White),
             ));
 
-            let items: Vec<ListItem> = packets
+            let items: Vec<ListItem> = net_info
                 .read()
                 .unwrap()
+                .packets
                 .iter()
                 .map(|i| {
                     let ptype = get_packet_info(i);
@@ -71,15 +79,16 @@ pub fn draw_ui(
             f.render_stateful_widget(items, chunks[0], &mut packets_state);
 
             if let Some(i) = packets_state.selected() {
-                if i < packets.read().unwrap().len() {
-                    let items: Vec<ListItem> = get_packet_description(&packets.read().unwrap()[i])
-                        .iter()
-                        .map(|field| {
-                            let field_val = field.to_string();
-                            ListItem::new(Spans::from(field_val))
-                                .style(Style::default().fg(Color::White).bg(Color::Black))
-                        })
-                        .collect();
+                if i < net_info.read().unwrap().packets.len() {
+                    let items: Vec<ListItem> =
+                        get_packet_description(&net_info.read().unwrap().packets[i])
+                            .iter()
+                            .map(|field| {
+                                let field_val = field.to_string();
+                                ListItem::new(Spans::from(field_val))
+                                    .style(Style::default().fg(Color::White).bg(Color::Black))
+                            })
+                            .collect();
 
                     packets_info_len = items.len();
 
@@ -97,6 +106,24 @@ pub fn draw_ui(
                     f.render_stateful_widget(items, chunks[1], &mut packets_info_state);
                 }
             }
+
+            let footer = vec![Spans::from(vec![
+                Span::raw(format!(
+                    "Captured Packets: {} ",
+                    net_info.read().unwrap().captured_packets
+                )),
+                Span::raw(format!(
+                    "Dropped Packets: {} ",
+                    net_info.read().unwrap().dropped_packets
+                )),
+            ])];
+
+            let footer_para = Paragraph::new(footer)
+                .block(Block::default())
+                .style(Style::default().fg(Color::White).bg(Color::Black))
+                .alignment(Alignment::Left);
+
+            f.render_widget(footer_para, chunks[2]);
         })?;
 
         match events.next()? {
@@ -112,7 +139,7 @@ pub fn draw_ui(
                     if packets_state_selected {
                         let i = match packets_state.selected() {
                             Some(i) => {
-                                if i >= packets.read().unwrap().len() {
+                                if i >= net_info.read().unwrap().packets.len() {
                                     0
                                 } else {
                                     i + 1
@@ -140,7 +167,7 @@ pub fn draw_ui(
                         let i = match packets_state.selected() {
                             Some(i) => {
                                 if i == 0 {
-                                    packets.read().unwrap().len() - 1
+                                    net_info.read().unwrap().packets.len() - 1
                                 } else {
                                     i - 1
                                 }
