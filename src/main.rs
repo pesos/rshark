@@ -213,7 +213,7 @@ fn draw_ui(
 
 fn get_packets_ui_header() -> String {
     format!(
-        "{:<16}    {:<16}    {:<10}    {:<6}    {:<20}",
+        "{:<20}    {:<20}    {:<10}    {:<6}    {:<20}",
         "Source", "Destination", "Protocol", "Length", "Info"
     )
 }
@@ -239,7 +239,7 @@ fn get_packet_info(packet: &PacketInfo) -> String {
             let tcp = TcpPacket::new(raw_packet);
             if let Some(tcp) = tcp {
                 format!(
-                    "{:<16}    {:<16}    {:<10}    {:<6}    {:<6}->{:<6}",
+                    "{:<20}    {:<20}    {:<10}    {:<6}    {:<6}->{:<6}",
                     source_ip,
                     dest_ip,
                     "TCP",
@@ -270,7 +270,7 @@ fn get_packet_info(packet: &PacketInfo) -> String {
             let udp = UdpPacket::new(raw_packet);
             if let Some(udp) = udp {
                 format!(
-                    "{:<16}    {:<16}    {:<10}    {:<6}    {:<6}->{:<6}",
+                    "{:<20}    {:<20}    {:<10}    {:<6}    {:<6}->{:<6}",
                     source_ip,
                     dest_ip,
                     "UDP",
@@ -290,7 +290,7 @@ fn get_packet_info(packet: &PacketInfo) -> String {
 
             if let Some(arp) = arp {
                 format!(
-                    "{:<16}    {:<16}    {:<10}    {:<6}    {:?}",
+                    "{:<20}    {:<20}    {:<10}    {:<6}    {:?}",
                     arp.get_sender_hw_addr(),
                     arp.get_target_hw_addr(),
                     "ARP",
@@ -322,7 +322,7 @@ fn get_packet_info(packet: &PacketInfo) -> String {
             // TODO: Improve print information
             if let Some(icmp) = icmp {
                 format!(
-                    "{:<16}    {:<16}    {:<10}    {:<6}    {:?}",
+                    "{:<20}    {:<20}    {:<10}    {:<6}    {:?}",
                     source_ip,
                     dest_ip,
                     "ICMP",
