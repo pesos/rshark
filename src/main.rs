@@ -1,9 +1,9 @@
+extern crate clap;
 extern crate pnet;
 
 mod display;
 mod network;
 
-use std::env;
 use std::io::{self, Write};
 use std::process;
 use std::sync::atomic::AtomicBool;
@@ -13,13 +13,28 @@ use std::thread;
 use display::draw_ui;
 use network::{get_valid_interface, start_packet_sniffer, NetworkInfo};
 
+use clap::{App, Arg};
 use pnet::datalink::interfaces;
 
 fn main() {
-    let iface_name = match env::args().nth(1) {
-        Some(n) => n,
+    let matches = App::new("rshark")
+        .version("0.1.0")
+        .author("Prithvi MK <prithvikrishna49@gmail.com>")
+        .about("Terminal UI based simple packet monitoring tool")
+        .arg(
+            Arg::with_name("interface")
+                .short('i')
+                .long("interface")
+                .value_name("INTERFACE")
+                .about("Sets network interface to capture packets on")
+                .takes_value(true),
+        )
+        .get_matches();
+
+    let iface_name = match matches.value_of("interface") {
+        Some(iface_name) => iface_name.to_string(),
         None => {
-            write!(io::stderr(), "USAGE: packetdump <NETWORK INTERFACE>").unwrap();
+            writeln!(io::stderr(), "Network interface not provided").unwrap();
             process::exit(1);
         }
     };
