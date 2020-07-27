@@ -24,6 +24,7 @@ fn main() {
         }
     };
 
+    // Check and get valid network interface
     let interface = match get_valid_interface(iface_name, interfaces()) {
         Some(interface) => interface,
         None => {
@@ -32,24 +33,26 @@ fn main() {
         }
     };
 
+    // Variable which is used to notify whether threads should be running
     let running = Arc::new(AtomicBool::new(true));
+
+    // Maintains packets, num of captured packets and num of dropped packets
     let net_info = Arc::new(RwLock::new(NetworkInfo::new()));
 
     let network_net_info = net_info.clone();
     let ui_net_info = net_info.clone();
 
     let network_running = running.clone();
+    let display_running = running.clone();
 
-    let network_sniffer = thread::spawn(|| {
+    let network_sniffer_thread = thread::spawn(|| {
         start_packet_sniffer(interface, network_net_info, network_running);
     });
 
-    let ui_running = running.clone();
-
-    let packets_len = thread::spawn(|| {
-        draw_ui(ui_net_info, ui_running).expect("Error!");
+    let display_thread = thread::spawn(|| {
+        draw_ui(ui_net_info, display_running).expect("Error!");
     });
 
-    network_sniffer.join().unwrap();
-    packets_len.join().unwrap();
+    network_sniffer_thread.join().unwrap();
+    display_thread.join().unwrap();
 }
