@@ -112,27 +112,29 @@ fn draw_ui(
             f.render_stateful_widget(items, chunks[0], &mut packets_state);
 
             if let Some(i) = packets_state.selected() {
-                let items: Vec<ListItem> = get_packet_description(&packets.read().unwrap()[i])
-                    .iter()
-                    .map(|field| {
-                        let field_val = field.to_string();
-                        ListItem::new(Spans::from(field_val))
-                            .style(Style::default().fg(Color::White).bg(Color::Black))
-                    })
-                    .collect();
+                if i < packets.read().unwrap().len() {
+                    let items: Vec<ListItem> = get_packet_description(&packets.read().unwrap()[i])
+                        .iter()
+                        .map(|field| {
+                            let field_val = field.to_string();
+                            ListItem::new(Spans::from(field_val))
+                                .style(Style::default().fg(Color::White).bg(Color::Black))
+                        })
+                        .collect();
 
-                packets_info_len = items.len();
+                    packets_info_len = items.len();
 
-                let items = List::new(items)
-                    .block(
-                        Block::default()
-                            .title("Packet Information")
-                            .borders(Borders::ALL)
-                            .style(Style::default().bg(Color::Black)),
-                    )
-                    .highlight_style(Style::default().bg(Color::Red).add_modifier(Modifier::BOLD));
+                    let items = List::new(items)
+                        .block(
+                            Block::default()
+                                .title("Packet Information")
+                                .borders(Borders::ALL)
+                                .style(Style::default().bg(Color::Black)),
+                        )
+                        .highlight_style(Style::default().bg(Color::Red).add_modifier(Modifier::BOLD));
 
-                f.render_stateful_widget(items, chunks[1], &mut packets_info_state);
+                    f.render_stateful_widget(items, chunks[1], &mut packets_info_state);
+                }
             }
         })?;
 
