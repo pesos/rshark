@@ -69,7 +69,12 @@ fn handle_udp_packet(
         //     udp.get_destination(),
         //     udp.get_length()
         // );
-        let temp = PacketInfo::new(PacketType::UDP, Some(source), Some(destination), Box::new(udp));
+        let temp = PacketInfo::new(
+            PacketType::UDP,
+            Some(source),
+            Some(destination),
+            Box::new(udp),
+        );
         packets.write().unwrap().push(temp);
     } else {
         // println!("[{}]: Malformed UDP Packet", interface_name);
@@ -117,7 +122,12 @@ fn handle_icmp_packet(
         //         icmp_packet.get_icmp_type()
         //     ),
         // }
-        let temp = PacketInfo::new(PacketType::ICMP, Some(source), Some(destination), Box::new(icmp_packet));
+        let temp = PacketInfo::new(
+            PacketType::ICMP,
+            Some(source),
+            Some(destination),
+            Box::new(icmp_packet),
+        );
         packets.write().unwrap().push(temp);
     } else {
         // println!("[{}]: Malformed ICMP Packet", interface_name);
@@ -172,7 +182,12 @@ fn handle_tcp_packet(
         //     tcp.get_destination(),
         //     packet.len()
         // );
-        let temp = PacketInfo::new(PacketType::TCP, Some(source), Some(destination), Box::new(tcp));
+        let temp = PacketInfo::new(
+            PacketType::TCP,
+            Some(source),
+            Some(destination),
+            Box::new(tcp),
+        );
         packets.write().unwrap().push(temp);
     } else {
         // println!("[{}]: Malformed TCP Packet", interface_name);
@@ -200,7 +215,7 @@ fn handle_transport_protocol(
         IpNextHeaderProtocols::Icmpv6 => {
             handle_icmpv6_packet(interface_name, source, destination, packet, packets)
         }
-        _ => {},
+        _ => {}
     }
 }
 
@@ -277,7 +292,7 @@ fn handle_ethernet_frame(
         EtherTypes::Ipv4 => handle_ipv4_packet(interface_name, ethernet, packets),
         EtherTypes::Ipv6 => handle_ipv6_packet(interface_name, ethernet, packets),
         EtherTypes::Arp => handle_arp_packet(interface_name, ethernet, packets),
-        _ => {},
+        _ => {}
     }
 }
 
