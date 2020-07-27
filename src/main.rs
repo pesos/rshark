@@ -291,8 +291,8 @@ fn get_packet_info(packet: &PacketInfo) -> String {
             if let Some(arp) = arp {
                 format!(
                     "{:<16}    {:<16}    {:<10}    {:<6}    {:?}",
-                    arp.get_sender_proto_addr(),
-                    arp.get_target_proto_addr(),
+                    arp.get_sender_hw_addr(),
+                    arp.get_target_hw_addr(),
                     "ARP",
                     payload.to_vec().len(),
                     arp.get_operation()
@@ -344,7 +344,7 @@ fn get_packet_description(packet: &PacketInfo) -> Vec<String> {
     match packet.packet_type {
         network::PacketType::TCP => {
             let raw_packet = packet.packet_data.packet();
-            let payload = packet.packet_data.payload().to_ascii_lowercase();
+            // let payload = packet.packet_data.payload().to_ascii_lowercase();
 
             if let Some(ip) = packet.source_ip {
                 pkt_desc.push(format!("Source IP: {}", ip.to_string()));
@@ -373,86 +373,66 @@ fn get_packet_description(packet: &PacketInfo) -> Vec<String> {
         }
         network::PacketType::UDP => {
             let raw_packet = packet.packet_data.packet();
-            let payload = packet.packet_data.payload();
+            // let payload = packet.packet_data.payload();
 
-            let source_ip = if let Some(ip) = packet.source_ip {
-                ip.to_string()
+            if let Some(ip) = packet.source_ip {
+                pkt_desc.push(format!("Source IP: {}", ip.to_string()));
             } else {
-                "NA".to_string()
-            };
+                pkt_desc.push(format!("Source IP: {}", "NA".to_string()));
+            }
 
-            let dest_ip = if let Some(ip) = packet.dest_ip {
-                ip.to_string()
+            if let Some(ip) = packet.dest_ip {
+                pkt_desc.push(format!("Destination IP: {}", ip.to_string()));
             } else {
-                "NA".to_string()
-            };
+                pkt_desc.push(format!("Destination IP: {}", "NA".to_string()));
+            }
 
             let udp = UdpPacket::new(raw_packet);
             if let Some(udp) = udp {
-                format!(
-                    "{:<16}    {:<16}    {:<10}    {:<6}    {:<6}->{:<6}",
-                    source_ip,
-                    dest_ip,
-                    "UDP",
-                    payload.to_vec().len(),
-                    udp.get_source(),
-                    udp.get_destination()
-                );
-            } else {
-                format!("UDP packet malformed");
+                pkt_desc.push(format!("Source Port: {}", udp.get_source()));
+                pkt_desc.push(format!("Destination Port: {}", udp.get_destination()));
             }
         }
         network::PacketType::ARP => {
             let raw_packet = packet.packet_data.packet();
-            let payload = packet.packet_data.payload();
+            // let payload = packet.packet_data.payload();
 
             let arp = ArpPacket::new(raw_packet);
-
             if let Some(arp) = arp {
-                format!(
-                    "{:<16}    {:<16}    {:<10}    {:<6}    {:?}",
-                    arp.get_sender_proto_addr(),
-                    arp.get_target_proto_addr(),
-                    "ARP",
-                    payload.to_vec().len(),
-                    arp.get_operation()
-                );
-            } else {
-                format!("ARP malformed");
+                pkt_desc.push(format!("Hardware Type: {:?}", arp.get_hardware_type()));
+                pkt_desc.push(format!("Protocol Type: {:?}", arp.get_protocol_type()));
+                // TODO: Elaborate on the ARP option
+                pkt_desc.push(format!("Operation: {:?}", arp.get_operation()));
+                pkt_desc.push(format!("Sender Hardware Address: {}", arp.get_sender_hw_addr()));
+                pkt_desc.push(format!("Target Hardware Address: {}", arp.get_target_hw_addr()));
+                pkt_desc.push(format!("Sender IP Address: {}", arp.get_sender_proto_addr()));
+                pkt_desc.push(format!("Target IP Address: {}", arp.get_target_proto_addr()));
             }
         }
         network::PacketType::ICMP => {
             let raw_packet = packet.packet_data.packet();
-            let payload = packet.packet_data.payload();
+            // let payload = packet.packet_data.payload();
 
-            let source_ip = if let Some(ip) = packet.source_ip {
-                ip.to_string()
+            if let Some(ip) = packet.source_ip {
+                pkt_desc.push(format!("Source IP: {}", ip.to_string()));
             } else {
-                "NA".to_string()
-            };
+                pkt_desc.push(format!("Source IP: {}", "NA".to_string()));
+            }
 
-            let dest_ip = if let Some(ip) = packet.dest_ip {
-                ip.to_string()
+            if let Some(ip) = packet.dest_ip {
+                pkt_desc.push(format!("Destination IP: {}", ip.to_string()));
             } else {
-                "NA".to_string()
-            };
+                pkt_desc.push(format!("Destination IP: {}", "NA".to_string()));
+            }
 
             let icmp = IcmpPacket::new(raw_packet);
 
-            // TODO: Improve print information
             if let Some(icmp) = icmp {
-                format!(
-                    "{:<16}    {:<16}    {:<10}    {:<6}    {:?}",
-                    source_ip,
-                    dest_ip,
-                    "ICMP",
-                    payload.to_vec().len(),
-                    icmp.get_icmp_code()
-                );
-            } else {
-                format!("ICMP packet malformed");
+                pkt_desc.push(format!("ICMP Type: {:?}", icmp.get_icmp_type()));
+                pkt_desc.push(format!("ICMP Code: {:?}", icmp.get_icmp_code()));
             }
         }
+        // TODO: Packet description for ICMPv6 packets
         network::PacketType::ICMPv6 => pkt_desc.push("None".to_string()),
     };
 
