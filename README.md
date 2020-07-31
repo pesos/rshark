@@ -32,6 +32,8 @@ Please open an issue and we'll try to help.
 
 ## Contributing
 
+Please check out the contribution guide [here](CONTRIBUTING.md).
+
 ## Authors and Acknowledgement
 
 This project is running thanks to all the contributors.
