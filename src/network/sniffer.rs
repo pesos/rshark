@@ -1,3 +1,11 @@
+//! # Sniffer
+//!
+//! A module for sniffing/capturing packets over a given network interface.
+
+use std::net::IpAddr;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, RwLock};
+
 use pnet::datalink::{self, NetworkInterface};
 use pnet::packet::arp::ArpPacket;
 use pnet::packet::ethernet::{EtherTypes, EthernetPacket, MutableEthernetPacket};
@@ -11,10 +19,7 @@ use pnet::packet::udp::UdpPacket;
 use pnet::packet::Packet;
 use pnet::util::MacAddr;
 
-use std::net::IpAddr;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, RwLock};
-
+/// Types of packets that are captured
 #[derive(Clone, Copy, Debug)]
 pub enum PacketType {
     TCP,
@@ -24,6 +29,8 @@ pub enum PacketType {
     ARP,
 }
 
+/// Stores various fields and data related to a packet,
+/// depending on the type of the packet
 pub struct PacketInfo {
     pub packet_type: PacketType,
     pub source_ip: Option<IpAddr>,
@@ -31,6 +38,7 @@ pub struct PacketInfo {
     pub packet_data: Box<dyn Packet + Send + Sync>,
 }
 
+/// Stores all captured packets and other statistics
 pub struct NetworkInfo {
     pub packets: Vec<PacketInfo>,
     pub captured_packets: u64,
@@ -38,6 +46,14 @@ pub struct NetworkInfo {
 }
 
 impl PacketInfo {
+    /// Returns a data of a packet stored in a structure
+    /// 
+    /// # Arguments
+    /// 
+    /// * `packet_type` - Denotes the type of packet
+    /// * `source_ip` - Source IP address
+    /// * `dest_ip` - Destination IP address
+    /// * `data` - Header and payload data of the packet
     fn new(
         packet_type: PacketType,
         source_ip: Option<IpAddr>,
@@ -55,6 +71,7 @@ impl PacketInfo {
 }
 
 impl NetworkInfo {
+    /// Creates and returns a new `NetworkInfo` structure
     pub fn new() -> Self {
         let packets: Vec<PacketInfo> = Vec::new();
         let captured_packets = 0u64;
@@ -68,6 +85,7 @@ impl NetworkInfo {
     }
 }
 
+/// Function handler for UDP datagram
 #[allow(unused_variables)]
 fn handle_udp_packet(
     interface_name: &str,
@@ -92,6 +110,7 @@ fn handle_udp_packet(
     }
 }
 
+/// Function handler for ICMP packets
 #[allow(unused_variables)]
 fn handle_icmp_packet(
     interface_name: &str,
@@ -147,6 +166,7 @@ fn handle_icmp_packet(
     }
 }
 
+/// Function handler for ICMPv6 packets
 #[allow(unused_variables)]
 fn handle_icmpv6_packet(
     interface_name: &str,
@@ -170,6 +190,7 @@ fn handle_icmpv6_packet(
     }
 }
 
+/// Function handler for TCP segment
 #[allow(unused_variables)]
 fn handle_tcp_packet(
     interface_name: &str,
@@ -193,6 +214,7 @@ fn handle_tcp_packet(
     }
 }
 
+/// Handles transport layer packets based on the protocol
 fn handle_transport_protocol(
     interface_name: &str,
     source: IpAddr,
@@ -220,6 +242,7 @@ fn handle_transport_protocol(
     }
 }
 
+/// Handles IPv4 datagram
 fn handle_ipv4_packet(
     interface_name: &str,
     ethernet: &EthernetPacket,
@@ -240,6 +263,7 @@ fn handle_ipv4_packet(
     }
 }
 
+/// Handles IPv6 datagram
 fn handle_ipv6_packet(
     interface_name: &str,
     ethernet: &EthernetPacket,
@@ -260,6 +284,7 @@ fn handle_ipv6_packet(
     }
 }
 
+/// Handles ARP packets
 fn handle_arp_packet(
     _interface_name: &str,
     ethernet: &EthernetPacket,
@@ -275,6 +300,7 @@ fn handle_arp_packet(
     }
 }
 
+/// Handles ethernet frames
 fn handle_ethernet_frame(
     interface: &NetworkInterface,
     ethernet: &EthernetPacket,
@@ -291,6 +317,7 @@ fn handle_ethernet_frame(
     }
 }
 
+/// Check and return a valid network interface
 pub fn get_valid_interface(
     iface_name: String,
     interfaces: Vec<NetworkInterface>,
@@ -301,6 +328,7 @@ pub fn get_valid_interface(
     interface
 }
 
+/// Start capturing/sniffing packets on a valid network interface
 pub fn start_packet_sniffer(
     interface: NetworkInterface,
     net_info: Arc<RwLock<NetworkInfo>>,
@@ -308,7 +336,7 @@ pub fn start_packet_sniffer(
 ) {
     use pnet::datalink::Channel::Ethernet;
 
-    // Create a channel to receive on
+    // Create a channel to receive packets on
     let (_, mut rx) = match datalink::channel(&interface, Default::default()) {
         Ok(Ethernet(tx, rx)) => (tx, rx),
         Ok(_) => panic!("Unhandled channel type: {}"),
