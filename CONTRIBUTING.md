@@ -29,5 +29,5 @@
 
 * To build the binary, run `cargo build`. This will place a binary in `target/debug` folder.
 * Recommended way to run the binary would be `sudo ./target/debug/rshark`.
-* Please run `cargo test` before commiting any code.
+* Please run `cargo test` and `cargo fmt` before commiting any code.
 * If run into any problems, please feel free to ask the maintainers or other contributors.
