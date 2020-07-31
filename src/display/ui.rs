@@ -105,6 +105,17 @@ pub fn draw_ui(
 
                     f.render_stateful_widget(items, chunks[1], &mut packets_info_state);
                 }
+            } else {
+                let items = List::new(vec![])
+                    .block(
+                        Block::default()
+                            .title("Packet Information")
+                            .borders(Borders::ALL)
+                            .style(Style::default().bg(Color::Black)),
+                    )
+                    .highlight_style(Style::default().bg(Color::Red).add_modifier(Modifier::BOLD));
+
+                f.render_stateful_widget(items, chunks[1], &mut packets_info_state);
             }
 
             let footer = vec![Spans::from(vec![
