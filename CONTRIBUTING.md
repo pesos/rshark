@@ -19,7 +19,7 @@
 
 3. Concepts of concurrency, threading, synchronisation etc.
 
-## Dev Dependencies
+## Developer Dependencies
 
 1. Install Rust using [`rustup`](https://www.rust-lang.org/tools/install).
 2. [`cargo`](https://doc.rust-lang.org/cargo/guide/index.html) is a command line utility that is part of the Rust toolchain that can be used to install additional tools.
@@ -40,4 +40,4 @@
 * To build the binary, run `cargo build`. This will place a binary in `target/debug` folder.
 * Recommended way to run the binary would be `sudo ./target/debug/rshark`.
 * Please run `cargo test` and `cargo fmt` before commiting any code.
-* If run into any problems, please feel free to ask the maintainers or other contributors.
+* If you run into any problems, please feel free to ask the maintainers or other contributors.
