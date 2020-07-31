@@ -4,7 +4,7 @@
 
 A terminal UI based packet monitoring tool written in Rust.
 
-![Example UI](images/rshark_ui.png)
+![Example UI](images/example.png)
 
 ## Installation
 
