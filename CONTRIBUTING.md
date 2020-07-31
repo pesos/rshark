@@ -25,6 +25,16 @@
 2. [`cargo`](https://doc.rust-lang.org/cargo/guide/index.html) is a command line utility that is part of the Rust toolchain that can be used to install additional tools.
 3. Install [`rustfmt`](https://github.com/rust-lang/rustfmt#quick-start) on the stable toolchain. `rustfmt` will be used to format code.
 
+## Developing Process
+
+1. Select an issue to work on.
+2. Fork the project.
+3. `git clone` the forked version of the project.
+4. It is important that you **create another branch** and work on the issue in the new branch. Use `git checkout -b <branch-name>` in the master branch.
+5. After writing some code, run `cargo fmt` and `cargo test`.
+6. If all tests are passing, push the changes to your remote repository.
+7. Use the GitHub website to create a Pull Request and wait for the maintainers to review it.
+
 ## Developer Notes
 
 * To build the binary, run `cargo build`. This will place a binary in `target/debug` folder.
