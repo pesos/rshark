@@ -86,9 +86,7 @@ impl NetworkInfo {
 }
 
 /// Function handler for UDP datagram
-#[allow(unused_variables)]
 fn handle_udp_packet(
-    interface_name: &str,
     source: IpAddr,
     destination: IpAddr,
     packet: &[u8],
@@ -111,9 +109,7 @@ fn handle_udp_packet(
 }
 
 /// Function handler for ICMP packets
-#[allow(unused_variables)]
 fn handle_icmp_packet(
-    interface_name: &str,
     source: IpAddr,
     destination: IpAddr,
     packet: &[u8],
@@ -167,9 +163,7 @@ fn handle_icmp_packet(
 }
 
 /// Function handler for ICMPv6 packets
-#[allow(unused_variables)]
 fn handle_icmpv6_packet(
-    interface_name: &str,
     source: IpAddr,
     destination: IpAddr,
     packet: &[u8],
@@ -191,9 +185,7 @@ fn handle_icmpv6_packet(
 }
 
 /// Function handler for TCP segment
-#[allow(unused_variables)]
 fn handle_tcp_packet(
-    interface_name: &str,
     source: IpAddr,
     destination: IpAddr,
     packet: &[u8],
@@ -216,7 +208,6 @@ fn handle_tcp_packet(
 
 /// Handles transport layer packets based on the protocol
 fn handle_transport_protocol(
-    interface_name: &str,
     source: IpAddr,
     destination: IpAddr,
     protocol: IpNextHeaderProtocol,
@@ -225,16 +216,16 @@ fn handle_transport_protocol(
 ) {
     match protocol {
         IpNextHeaderProtocols::Udp => {
-            handle_udp_packet(interface_name, source, destination, packet, net_info)
+            handle_udp_packet(source, destination, packet, net_info)
         }
         IpNextHeaderProtocols::Tcp => {
-            handle_tcp_packet(interface_name, source, destination, packet, net_info)
+            handle_tcp_packet(source, destination, packet, net_info)
         }
         IpNextHeaderProtocols::Icmp => {
-            handle_icmp_packet(interface_name, source, destination, packet, net_info)
+            handle_icmp_packet(source, destination, packet, net_info)
         }
         IpNextHeaderProtocols::Icmpv6 => {
-            handle_icmpv6_packet(interface_name, source, destination, packet, net_info)
+            handle_icmpv6_packet(source, destination, packet, net_info)
         }
         _ => {
             net_info.write().unwrap().dropped_packets += 1;
@@ -244,14 +235,12 @@ fn handle_transport_protocol(
 
 /// Handles IPv4 datagram
 fn handle_ipv4_packet(
-    interface_name: &str,
     ethernet: &EthernetPacket,
     net_info: &Arc<RwLock<NetworkInfo>>,
 ) {
     let header = Ipv4Packet::new(ethernet.payload());
     if let Some(header) = header {
         handle_transport_protocol(
-            interface_name,
             IpAddr::V4(header.get_source()),
             IpAddr::V4(header.get_destination()),
             header.get_next_level_protocol(),
@@ -265,14 +254,12 @@ fn handle_ipv4_packet(
 
 /// Handles IPv6 datagram
 fn handle_ipv6_packet(
-    interface_name: &str,
     ethernet: &EthernetPacket,
     net_info: &Arc<RwLock<NetworkInfo>>,
 ) {
     let header = Ipv6Packet::new(ethernet.payload());
     if let Some(header) = header {
         handle_transport_protocol(
-            interface_name,
             IpAddr::V6(header.get_source()),
             IpAddr::V6(header.get_destination()),
             header.get_next_header(),
@@ -286,7 +273,6 @@ fn handle_ipv6_packet(
 
 /// Handles ARP packets
 fn handle_arp_packet(
-    _interface_name: &str,
     ethernet: &EthernetPacket,
     net_info: &Arc<RwLock<NetworkInfo>>,
 ) {
@@ -302,15 +288,13 @@ fn handle_arp_packet(
 
 /// Handles ethernet frames
 fn handle_ethernet_frame(
-    interface: &NetworkInterface,
     ethernet: &EthernetPacket,
     net_info: &Arc<RwLock<NetworkInfo>>,
 ) {
-    let interface_name = &interface.name[..];
     match ethernet.get_ethertype() {
-        EtherTypes::Ipv4 => handle_ipv4_packet(interface_name, ethernet, net_info),
-        EtherTypes::Ipv6 => handle_ipv6_packet(interface_name, ethernet, net_info),
-        EtherTypes::Arp => handle_arp_packet(interface_name, ethernet, net_info),
+        EtherTypes::Ipv4 => handle_ipv4_packet(ethernet, net_info),
+        EtherTypes::Ipv6 => handle_ipv6_packet(ethernet, net_info),
+        EtherTypes::Arp => handle_arp_packet(ethernet, net_info),
         _ => {
             net_info.write().unwrap().dropped_packets += 1;
         }
@@ -372,7 +356,6 @@ pub fn start_packet_sniffer(
                             fake_ethernet_frame.set_ethertype(EtherTypes::Ipv4);
                             fake_ethernet_frame.set_payload(&packet[payload_offset..]);
                             handle_ethernet_frame(
-                                &interface,
                                 &fake_ethernet_frame.to_immutable(),
                                 &net_info,
                             );
@@ -383,7 +366,6 @@ pub fn start_packet_sniffer(
                             fake_ethernet_frame.set_ethertype(EtherTypes::Ipv6);
                             fake_ethernet_frame.set_payload(&packet[payload_offset..]);
                             handle_ethernet_frame(
-                                &interface,
                                 &fake_ethernet_frame.to_immutable(),
                                 &net_info,
                             );
@@ -391,7 +373,7 @@ pub fn start_packet_sniffer(
                         }
                     }
                 }
-                handle_ethernet_frame(&interface, &EthernetPacket::new(packet).unwrap(), &net_info);
+                handle_ethernet_frame(&EthernetPacket::new(packet).unwrap(), &net_info);
             }
             Err(e) => panic!("Unable to receive packet: {}", e),
         }
