@@ -47,9 +47,9 @@ pub struct NetworkInfo {
 
 impl PacketInfo {
     /// Returns a data of a packet stored in a structure
-    /// 
+    ///
     /// # Arguments
-    /// 
+    ///
     /// * `packet_type` - Denotes the type of packet
     /// * `source_ip` - Source IP address
     /// * `dest_ip` - Destination IP address
@@ -215,15 +215,9 @@ fn handle_transport_protocol(
     net_info: &Arc<RwLock<NetworkInfo>>,
 ) {
     match protocol {
-        IpNextHeaderProtocols::Udp => {
-            handle_udp_packet(source, destination, packet, net_info)
-        }
-        IpNextHeaderProtocols::Tcp => {
-            handle_tcp_packet(source, destination, packet, net_info)
-        }
-        IpNextHeaderProtocols::Icmp => {
-            handle_icmp_packet(source, destination, packet, net_info)
-        }
+        IpNextHeaderProtocols::Udp => handle_udp_packet(source, destination, packet, net_info),
+        IpNextHeaderProtocols::Tcp => handle_tcp_packet(source, destination, packet, net_info),
+        IpNextHeaderProtocols::Icmp => handle_icmp_packet(source, destination, packet, net_info),
         IpNextHeaderProtocols::Icmpv6 => {
             handle_icmpv6_packet(source, destination, packet, net_info)
         }
@@ -234,10 +228,7 @@ fn handle_transport_protocol(
 }
 
 /// Handles IPv4 datagram
-fn handle_ipv4_packet(
-    ethernet: &EthernetPacket,
-    net_info: &Arc<RwLock<NetworkInfo>>,
-) {
+fn handle_ipv4_packet(ethernet: &EthernetPacket, net_info: &Arc<RwLock<NetworkInfo>>) {
     let header = Ipv4Packet::new(ethernet.payload());
     if let Some(header) = header {
         handle_transport_protocol(
@@ -253,10 +244,7 @@ fn handle_ipv4_packet(
 }
 
 /// Handles IPv6 datagram
-fn handle_ipv6_packet(
-    ethernet: &EthernetPacket,
-    net_info: &Arc<RwLock<NetworkInfo>>,
-) {
+fn handle_ipv6_packet(ethernet: &EthernetPacket, net_info: &Arc<RwLock<NetworkInfo>>) {
     let header = Ipv6Packet::new(ethernet.payload());
     if let Some(header) = header {
         handle_transport_protocol(
@@ -272,10 +260,7 @@ fn handle_ipv6_packet(
 }
 
 /// Handles ARP packets
-fn handle_arp_packet(
-    ethernet: &EthernetPacket,
-    net_info: &Arc<RwLock<NetworkInfo>>,
-) {
+fn handle_arp_packet(ethernet: &EthernetPacket, net_info: &Arc<RwLock<NetworkInfo>>) {
     let header = ArpPacket::owned(ethernet.payload().to_vec());
     if let Some(header) = header {
         let arp_packet_info = PacketInfo::new(PacketType::ARP, None, None, Box::new(header));
@@ -287,10 +272,7 @@ fn handle_arp_packet(
 }
 
 /// Handles ethernet frames
-fn handle_ethernet_frame(
-    ethernet: &EthernetPacket,
-    net_info: &Arc<RwLock<NetworkInfo>>,
-) {
+fn handle_ethernet_frame(ethernet: &EthernetPacket, net_info: &Arc<RwLock<NetworkInfo>>) {
     match ethernet.get_ethertype() {
         EtherTypes::Ipv4 => handle_ipv4_packet(ethernet, net_info),
         EtherTypes::Ipv6 => handle_ipv6_packet(ethernet, net_info),
@@ -355,20 +337,14 @@ pub fn start_packet_sniffer(
                             fake_ethernet_frame.set_source(MacAddr(0, 0, 0, 0, 0, 0));
                             fake_ethernet_frame.set_ethertype(EtherTypes::Ipv4);
                             fake_ethernet_frame.set_payload(&packet[payload_offset..]);
-                            handle_ethernet_frame(
-                                &fake_ethernet_frame.to_immutable(),
-                                &net_info,
-                            );
+                            handle_ethernet_frame(&fake_ethernet_frame.to_immutable(), &net_info);
                             continue;
                         } else if version == 6 {
                             fake_ethernet_frame.set_destination(MacAddr(0, 0, 0, 0, 0, 0));
                             fake_ethernet_frame.set_source(MacAddr(0, 0, 0, 0, 0, 0));
                             fake_ethernet_frame.set_ethertype(EtherTypes::Ipv6);
                             fake_ethernet_frame.set_payload(&packet[payload_offset..]);
-                            handle_ethernet_frame(
-                                &fake_ethernet_frame.to_immutable(),
-                                &net_info,
-                            );
+                            handle_ethernet_frame(&fake_ethernet_frame.to_immutable(), &net_info);
                             continue;
                         }
                     }
@@ -377,5 +353,155 @@ pub fn start_packet_sniffer(
             }
             Err(e) => panic!("Unable to receive packet: {}", e),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::net::Ipv4Addr;
+
+    #[test]
+    fn test_get_valid_interface() {
+        let iface_name = "eth0".to_string();
+        let mut interfaces: Vec<NetworkInterface> = vec![];
+
+        let intf_eth0 = NetworkInterface {
+            name: "eth0".to_string(),
+            index: 0,
+            mac: None,
+            ips: vec![],
+            flags: 0,
+        };
+
+        for i in 0..5 {
+            let temp_intf = NetworkInterface {
+                name: format!("eth{}", i),
+                index: 0,
+                mac: None,
+                ips: vec![],
+                flags: 0,
+            };
+
+            interfaces.push(temp_intf);
+        }
+
+        let valid_intf = get_valid_interface(iface_name, interfaces);
+
+        assert_eq!(Some(intf_eth0), valid_intf);
+    }
+
+    #[test]
+    fn test_get_valid_interface_fail() {
+        let iface_name = "wlan0".to_string();
+        let mut interfaces: Vec<NetworkInterface> = vec![];
+
+        for i in 0..5 {
+            let temp_intf = NetworkInterface {
+                name: format!("eth{}", i),
+                index: 0,
+                mac: None,
+                ips: vec![],
+                flags: 0,
+            };
+
+            interfaces.push(temp_intf);
+        }
+
+        let valid_intf = get_valid_interface(iface_name, interfaces);
+
+        assert_eq!(None, valid_intf);
+    }
+
+    #[test]
+    fn test_handle_udp_packet_ipv4() {
+        let source_ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+        let dest_ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+
+        let net_info = Arc::new(RwLock::new(NetworkInfo::new()));
+        let test_net_info = net_info.clone();
+
+        let byte_packet = [0u8; 200];
+
+        handle_udp_packet(source_ip, dest_ip, &byte_packet, &net_info);
+
+        let udp_packet = UdpPacket::new(&byte_packet).unwrap();
+
+        assert_eq!(test_net_info.read().unwrap().packets.len(), 1usize);
+
+        let res_packet_info = &test_net_info.read().unwrap().packets[0];
+
+        assert_eq!(res_packet_info.source_ip.unwrap(), source_ip);
+        assert_eq!(res_packet_info.dest_ip.unwrap(), dest_ip);
+
+        let res_udp_packet = UdpPacket::new(res_packet_info.packet_data.packet()).unwrap();
+
+        assert_eq!(udp_packet, res_udp_packet);
+        assert_eq!(test_net_info.read().unwrap().captured_packets, 1u64);
+    }
+
+    #[test]
+    fn test_handle_udp_packet_ipv4_fail() {
+        let source_ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+        let dest_ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+
+        let net_info = Arc::new(RwLock::new(NetworkInfo::new()));
+        let test_net_info = net_info.clone();
+
+        // Minimum UDP packet size is 8 bytes(payload is 0)
+        // So the packet must be dropped
+        let byte_packet = [0u8; 7];
+
+        handle_udp_packet(source_ip, dest_ip, &byte_packet, &net_info);
+
+        assert_eq!(test_net_info.read().unwrap().packets.len(), 0);
+        assert_eq!(test_net_info.read().unwrap().captured_packets, 0u64);
+        assert_eq!(test_net_info.read().unwrap().dropped_packets, 1u64);
+    }
+
+    #[test]
+    fn test_handle_tcp_packet_ipv4() {
+        let source_ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+        let dest_ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+
+        let net_info = Arc::new(RwLock::new(NetworkInfo::new()));
+        let test_net_info = net_info.clone();
+
+        let byte_packet = [0u8; 200];
+
+        handle_tcp_packet(source_ip, dest_ip, &byte_packet, &net_info);
+
+        let tcp_packet = TcpPacket::new(&byte_packet).unwrap();
+
+        assert_eq!(test_net_info.read().unwrap().packets.len(), 1usize);
+
+        let res_packet_info = &test_net_info.read().unwrap().packets[0];
+
+        assert_eq!(res_packet_info.source_ip.unwrap(), source_ip);
+        assert_eq!(res_packet_info.dest_ip.unwrap(), dest_ip);
+
+        let res_tcp_packet = TcpPacket::new(res_packet_info.packet_data.packet()).unwrap();
+
+        assert_eq!(tcp_packet, res_tcp_packet);
+        assert_eq!(test_net_info.read().unwrap().captured_packets, 1u64);
+    }
+
+    #[test]
+    fn test_handle_tcp_packet_ipv4_fail() {
+        let source_ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+        let dest_ip = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
+
+        let net_info = Arc::new(RwLock::new(NetworkInfo::new()));
+        let test_net_info = net_info.clone();
+
+        // Minimum TCP packet size is 8 bytes(weird)
+        // So the packet must be dropped
+        let byte_packet = [0u8; 7];
+
+        handle_udp_packet(source_ip, dest_ip, &byte_packet, &net_info);
+
+        assert_eq!(test_net_info.read().unwrap().packets.len(), 0);
+        assert_eq!(test_net_info.read().unwrap().captured_packets, 0u64);
+        assert_eq!(test_net_info.read().unwrap().dropped_packets, 1u64);
     }
 }
