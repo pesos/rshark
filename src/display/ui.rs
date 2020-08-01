@@ -20,6 +20,7 @@ use pnet::packet::{
     arp::ArpPacket, icmp::IcmpPacket, icmpv6::Icmpv6Packet, tcp::TcpPacket, udp::UdpPacket,
 };
 
+/// Main function which renders UI on the terminal
 pub fn draw_ui(
     net_info: Arc<RwLock<NetworkInfo>>,
     running: Arc<AtomicBool>,
@@ -38,6 +39,7 @@ pub fn draw_ui(
 
     while running.load(Ordering::Relaxed) {
         terminal.draw(|f| {
+            // Setting the layout of the UI
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints(
@@ -50,11 +52,13 @@ pub fn draw_ui(
                 )
                 .split(f.size());
 
+            // Header for packet capture view
             let header = Spans::from(Span::styled(
                 get_packets_ui_header(),
                 Style::default().fg(Color::Black).bg(Color::White),
             ));
 
+            // Getting info about packets captured
             let items: Vec<ListItem> = net_info
                 .read()
                 .unwrap()
@@ -76,8 +80,10 @@ pub fn draw_ui(
                 )
                 .highlight_style(Style::default().bg(Color::Red).add_modifier(Modifier::BOLD));
 
+            // Rendering the packets that are captured
             f.render_stateful_widget(items, chunks[0], &mut packets_state);
 
+            // Rendering logic for displaying packet information in the bottom window pane
             if let Some(i) = packets_state.selected() {
                 if i < net_info.read().unwrap().packets.len() {
                     let items: Vec<ListItem> =
@@ -118,6 +124,7 @@ pub fn draw_ui(
                 f.render_stateful_widget(items, chunks[1], &mut packets_info_state);
             }
 
+            // Footer info rendering
             let footer = vec![Spans::from(vec![
                 Span::raw(format!(
                     "Captured Packets: {} ",
@@ -137,6 +144,7 @@ pub fn draw_ui(
             f.render_widget(footer_para, chunks[2]);
         })?;
 
+        // Capture events from the keyboard
         match events.next()? {
             Event::Input(input) => match input {
                 Key::Char('q') => {
@@ -212,6 +220,7 @@ pub fn draw_ui(
     Ok(())
 }
 
+/// Get header of packet capture UI
 fn get_packets_ui_header() -> String {
     format!(
         "{:<20}    {:<20}    {:<10}    {:<6}    {:<20}",
@@ -219,6 +228,7 @@ fn get_packets_ui_header() -> String {
     )
 }
 
+/// Get brief packet info
 fn get_packet_info(packet: &PacketInfo) -> String {
     match packet.packet_type {
         PacketType::TCP => {
@@ -339,6 +349,7 @@ fn get_packet_info(packet: &PacketInfo) -> String {
     }
 }
 
+/// Get detailed packet description
 fn get_packet_description(packet: &PacketInfo) -> Vec<String> {
     let mut pkt_desc: Vec<String> = vec![];
 
