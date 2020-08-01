@@ -19,6 +19,10 @@
 
 3. Concepts of concurrency, threading, synchronisation etc.
 
+4. Get familiar with the crates used -
+   * `tui-rs` - [GitHub](https://github.com/fdehau/tui-rs) | [Docs](https://docs.rs/tui/0.10.0/tui/)
+   * `libpnet` - [GitHub](https://github.com/libpnet/libpnet) | [Docs](https://docs.rs/pnet/0.26.0/pnet/)
+
 ## Developer Dependencies
 
 1. Install Rust using [`rustup`](https://www.rust-lang.org/tools/install).
