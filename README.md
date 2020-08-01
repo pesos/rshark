@@ -8,6 +8,14 @@ A terminal UI based packet monitoring tool written in Rust.
 
 ## Installation
 
+**Works only on Linux for now.**
+
+**Prerequisites**: `rust` and `cargo`.
+
+1. `git clone` this repository.
+2. `cd rshark`
+3. `cargo install` should install the binary. Make sure `$HOME/.cargo/bin` is in your `$PATH` variable.
+
 ## Usage
 
 ```output
