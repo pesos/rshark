@@ -38,6 +38,13 @@ Please open an issue and we'll try to help.
 
 ## Roadmap
 
+* [ ] Add code formatting check in CI.
+* [ ] Add `clippy` checks for better and idiomatic Rust code.
+* [ ] Maybe a separate thread for running a timer, to get time of arrival of packets.
+* [ ] Use the `insta` crate for snapshot testing(or UI testing).
+* [ ] Gracefully handle errors instead of just panicking.
+* [ ] Maybe add a logging functionality for catching errors.
+
 ## Contributing
 
 Please check out the contribution guide [here](CONTRIBUTING.md).
