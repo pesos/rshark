@@ -60,14 +60,19 @@ fn main() {
     let network_running = running.clone();
     let display_running = running.clone();
 
+
     let network_sniffer_thread = thread::spawn(|| {
         start_packet_sniffer(interface, network_net_info, network_running);
     });
 
     let display_thread = thread::spawn(|| {
         draw_ui(ui_net_info, display_running).expect("Error!");
-    });
-
-    network_sniffer_thread.join().unwrap();
+    });    
+    
+    let res_net = network_sniffer_thread.join();
     display_thread.join().unwrap();
+    if res_net.is_err() {
+        println!("Please run with \"sudo\" if not already running with \"sudo\"");
+        std::process::exit(0);
+    }
 }
