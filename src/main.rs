@@ -60,15 +60,14 @@ fn main() {
     let network_running = running.clone();
     let display_running = running.clone();
 
-
     let network_sniffer_thread = thread::spawn(|| {
         start_packet_sniffer(interface, network_net_info, network_running);
     });
 
     let display_thread = thread::spawn(|| {
         draw_ui(ui_net_info, display_running).expect("Error!");
-    });    
-    
+    });
+
     let res_net = network_sniffer_thread.join();
     display_thread.join().unwrap();
     if res_net.is_err() {

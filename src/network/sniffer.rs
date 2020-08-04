@@ -309,7 +309,7 @@ pub fn start_packet_sniffer(
         Err(e) => {
             running.store(false, Ordering::SeqCst);
             panic!("Unable to create channel: {}", e)
-        },
+        }
     };
 
     while running.load(Ordering::Relaxed) {
