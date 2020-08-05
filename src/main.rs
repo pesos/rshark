@@ -71,7 +71,7 @@ fn main() {
     let res_net = network_sniffer_thread.join();
     display_thread.join().unwrap();
     if res_net.is_err() {
-        println!("Please run with \"sudo\" if not already running with \"sudo\"");
+        println!("Failed to start packet capture.");
         std::process::exit(0);
     }
 }
