@@ -68,6 +68,10 @@ fn main() {
         draw_ui(ui_net_info, display_running).expect("Error!");
     });
 
-    network_sniffer_thread.join().unwrap();
+    let res_net = network_sniffer_thread.join();
     display_thread.join().unwrap();
+    if res_net.is_err() {
+        println!("Failed to start packet capture.");
+        std::process::exit(0);
+    }
 }

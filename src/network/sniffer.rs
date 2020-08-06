@@ -306,7 +306,10 @@ pub fn start_packet_sniffer(
     let (_, mut rx) = match datalink::channel(&interface, Default::default()) {
         Ok(Ethernet(tx, rx)) => (tx, rx),
         Ok(_) => panic!("Unhandled channel type: {}"),
-        Err(e) => panic!("Unable to create channel: {}", e),
+        Err(e) => {
+            running.store(false, Ordering::SeqCst);
+            panic!("Unable to create channel: {}", e)
+        }
     };
 
     while running.load(Ordering::Relaxed) {
