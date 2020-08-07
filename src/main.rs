@@ -54,11 +54,11 @@ fn main() {
     // Maintains packets, num of captured packets and num of dropped packets
     let net_info = Arc::new(RwLock::new(NetworkInfo::new()));
 
-    let network_net_info = net_info.clone();
-    let ui_net_info = net_info.clone();
+    let network_net_info = Arc::clone(&net_info);
+    let ui_net_info = Arc::clone(&net_info);
 
-    let network_running = running.clone();
-    let display_running = running.clone();
+    let network_running = Arc::clone(&running);
+    let display_running = Arc::clone(&running);
 
     let network_sniffer_thread = thread::spawn(|| {
         start_packet_sniffer(interface, network_net_info, network_running);
