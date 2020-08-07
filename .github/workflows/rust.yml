@@ -34,3 +34,19 @@ jobs:
       run: cargo test --verbose
     - name: Build
       run: cargo build --verbose
+ 
+clippy:
+  name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions-rs/toolchain@v1
+        id: toolchain
+        with:
+          profile: minimal
+          toolchain: stable
+          components: clippy
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings
