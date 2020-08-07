@@ -94,7 +94,7 @@ fn handle_udp_packet(
 ) {
     let udp = UdpPacket::owned(packet.to_vec());
 
-    if e(udp) = udp {
+    if let Some(udp) = udp {
         let udp_packet_info = PacketInfo::new(
             PacketType::UDP,
             Some(source),
@@ -289,6 +289,7 @@ pub fn get_valid_interface(
     interfaces: Vec<NetworkInterface>,
 ) -> Option<NetworkInterface> {
     let interface_names_match = |iface: &NetworkInterface| iface.name == iface_name;
+
     interfaces.into_iter().find(interface_names_match)
 }
 
@@ -303,7 +304,7 @@ pub fn start_packet_sniffer(
     // Create a channel to receive packets on
     let (_, mut rx) = match datalink::channel(&interface, Default::default()) {
         Ok(Ethernet(tx, rx)) => (tx, rx),
-        Ok(_) => panic!("Unhandled channel type:"),
+        Ok(_) => panic!("Unhandled channel type"),
         Err(e) => {
             running.store(false, Ordering::SeqCst);
             panic!("Unable to create channel: {}", e)
