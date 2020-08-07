@@ -259,7 +259,7 @@ fn get_packet_info(packet: &PacketInfo) -> String {
                     tcp.get_destination()
                 )
             } else {
-                format!("TCP packet malformed")
+                "TCP packet malformed".to_string()
             }
         }
         PacketType::UDP => {
@@ -290,7 +290,7 @@ fn get_packet_info(packet: &PacketInfo) -> String {
                     udp.get_destination()
                 )
             } else {
-                format!("UDP packet malformed")
+                "UDP packet malformed".to_string()
             }
         }
         PacketType::ARP => {
@@ -309,7 +309,7 @@ fn get_packet_info(packet: &PacketInfo) -> String {
                     arp.get_operation()
                 )
             } else {
-                format!("ARP malformed")
+                "ARP malformed".to_string()
             }
         }
         PacketType::ICMP => {
@@ -341,11 +341,11 @@ fn get_packet_info(packet: &PacketInfo) -> String {
                     icmp.get_icmp_code()
                 )
             } else {
-                format!("ICMP packet malformed")
+                "ICMP packet malformed".to_string()
             }
         }
         // TODO: Print information for ICMP
-        PacketType::ICMPv6 => format!("ICMPv6"),
+        PacketType::ICMPv6 => "ICMPv6".to_string(),
     }
 }
 
