@@ -289,9 +289,7 @@ pub fn get_valid_interface(
     interfaces: Vec<NetworkInterface>,
 ) -> Option<NetworkInterface> {
     let interface_names_match = |iface: &NetworkInterface| iface.name == iface_name;
-    let interface = interfaces.into_iter().filter(interface_names_match).next();
-
-    interface
+    interfaces.into_iter().filter(interface_names_match).next()
 }
 
 /// Start capturing/sniffing packets on a valid network interface
