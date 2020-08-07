@@ -24,6 +24,7 @@ assignees: ''
 
 **Screenshots**
 <!-- If applicable, add screenshots to help explain your problem, otherwise please remove this section -->
+<!-- PLEASE DO NOT GIVE AWAY YOUR IP WHILE POSTING SCREENSHOTS OF THE PACKET CAPTURE -->
 
 **Desktop**
 <!-- Replace all lines below with your desktop environment -->
