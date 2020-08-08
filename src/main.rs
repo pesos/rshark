@@ -4,7 +4,6 @@ extern crate pnet;
 mod display;
 mod network;
 
-use std::io::{self, Write};
 use std::process;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, RwLock};
@@ -34,7 +33,7 @@ fn main() {
     let iface_name = match matches.value_of("interface") {
         Some(iface_name) => iface_name.to_string(),
         None => {
-            writeln!(io::stderr(), "Network interface not provided").unwrap();
+            eprintln!("Network interface not provided");
             process::exit(1);
         }
     };
@@ -43,7 +42,7 @@ fn main() {
     let interface = match get_valid_interface(iface_name, interfaces()) {
         Some(interface) => interface,
         None => {
-            writeln!(io::stderr(), "Invalid network interface.").unwrap();
+            eprintln!("Invalid network interface");
             process::exit(1);
         }
     };
