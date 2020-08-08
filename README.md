@@ -14,7 +14,7 @@ A terminal UI based packet monitoring tool written in Rust.
 
 1. `git clone` this repository.
 2. `cd rshark`
-3. `cargo install` should install the binary. Make sure `$HOME/.cargo/bin` is in your `$PATH` variable.
+3. `cargo install --path .` should install the binary. Make sure `$HOME/.cargo/bin` is in your `$PATH` variable.
 
 ## Usage
 
