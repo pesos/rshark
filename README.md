@@ -39,7 +39,7 @@ Please open an issue and we'll try to help.
 ## Roadmap
 
 * [x] Add code formatting check in CI.
-* [ ] Add `clippy` checks for better and idiomatic Rust code.
+* [x] Add `clippy` checks for better and idiomatic Rust code.
 * [ ] Maybe a separate thread for running a timer, to get time of arrival of packets.
 * [ ] Use the `insta` crate for snapshot testing(or UI testing).
 * [ ] Gracefully handle errors instead of just panicking.
