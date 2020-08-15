@@ -1,5 +1,5 @@
 use std::error::Error;
-use std::io::{self};
+use std::io;
 use std::sync::{atomic::AtomicBool, atomic::Ordering, Arc, RwLock};
 
 use super::events::{Event, Events};
@@ -151,10 +151,10 @@ pub fn draw_ui(
                     terminal.clear()?;
                     running.store(false, Ordering::SeqCst);
                 }
-                Key::Left => {
+                Key::Left | Key::Esc => {
                     packets_state.select(None);
                 }
-                Key::Down => {
+                Key::Down | Key::Char('j') => {
                     if packets_state_selected {
                         let i = match packets_state.selected() {
                             Some(i) => {
@@ -181,12 +181,12 @@ pub fn draw_ui(
                         packets_info_state.select(Some(i));
                     }
                 }
-                Key::Up => {
+                Key::Up | Key::Char('k') => {
                     if packets_state_selected {
                         let i = match packets_state.selected() {
                             Some(i) => {
                                 if i == 0 {
-                                    net_info.read().unwrap().packets.len() - 1
+                                    net_info.read().unwrap().packets.len().saturating_sub(1)
                                 } else {
                                     i - 1
                                 }
@@ -198,7 +198,7 @@ pub fn draw_ui(
                         let i = match packets_info_state.selected() {
                             Some(i) => {
                                 if i == 0 {
-                                    packets_info_len - 1
+                                    packets_info_len.saturating_sub(1)
                                 } else {
                                     i - 1
                                 }
@@ -208,7 +208,23 @@ pub fn draw_ui(
                         packets_info_state.select(Some(i));
                     }
                 }
-                Key::Char('\t') => {
+                Key::Char('g') => {
+                    if packets_state_selected {
+                        packets_state.select(Some(0));
+                    } else {
+                        packets_info_state.select(Some(0));
+                    }
+                }
+                Key::Char('G') => {
+                    if packets_state_selected {
+                        packets_state.select(Some(
+                            net_info.read().unwrap().packets.len().saturating_sub(1),
+                        ));
+                    } else {
+                        packets_info_state.select(Some(packets_info_len.saturating_sub(1)));
+                    }
+                }
+                Key::Char('\t') | Key::Char('J') => {
                     packets_state_selected = !packets_state_selected;
                 }
                 _ => {}
