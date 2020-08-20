@@ -8,7 +8,7 @@ A terminal UI based packet monitoring tool written in Rust.
 
 ## Installation
 
-**Works only on Linux for now.**
+**Works only on Unix-like OSes for now.**
 
 **Prerequisites**: `rust` and `cargo`.
 
@@ -31,6 +31,14 @@ OPTIONS:
 ```
 
 **Note that since `rshark` sniffs network packets, it requires root privileges**
+
+### How to Run
+1. Find a network device to monitor. To find one using OSX:
+
+`networksetup -listallhardwareports`
+
+2. Run the binary on a device, e.g. WiFi, must run as root.
+`sudo cargo run -- -i en0`
 
 ## Support
 
