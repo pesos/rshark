@@ -19,6 +19,7 @@ Refer to [this](https://pesos.github.io/projects/about-rshark#learning-path-for-
 1. Install Rust using [`rustup`](https://www.rust-lang.org/tools/install).
 2. [`cargo`](https://doc.rust-lang.org/cargo/guide/index.html) is a command line utility that is part of the Rust toolchain that can be used to install additional tools.
 3. Install [`rustfmt`](https://github.com/rust-lang/rustfmt#quick-start) on the stable toolchain. `rustfmt` will be used to format code.
+4. Install [`clippy`](https://github.com/rust-lang/rust-clippy#step-2-install-clippy) on the stable toolchain. `clippy` will be used to catch common mistakes and improve your Rust code.
 
 ## Developing Process: The short version
 
@@ -26,7 +27,7 @@ Refer to [this](https://pesos.github.io/projects/about-rshark#learning-path-for-
 2. Fork the project.
 3. `git clone` the forked version of the project.
 4. Work on the master branch for smaller patches and a separate branch for new features
-5. After writing some code, run `cargo fmt` and `cargo test`.
+5. After writing some code, run `cargo fmt`, `cargo clippy -- -D warnings` and `cargo test`.
 6. If all tests are passing, pull changes from the original remote with a rebase, and push the changes to your remote repository.
 7. Use the GitHub website to create a Pull Request and wait for the maintainers to review it.
 
@@ -85,7 +86,7 @@ As long as you follow the above instructions things should go well. You are alwa
 
 * To build the binary, run `cargo build`. This will place a binary in `target/debug` folder.
 * Recommended way to run the binary would be `sudo ./target/debug/rshark`.
-* Please run `cargo test` and `cargo fmt` before commiting any code.
+* Please run `cargo test`, `cargo clippy -- -D warnings` and `cargo fmt` before commiting any code.
 * If you run into any problems, please feel free to ask the maintainers or other contributors.
 
 ## Code of Conduct
