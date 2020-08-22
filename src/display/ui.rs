@@ -266,7 +266,7 @@ fn get_packet_info(packet: &PacketInfo) -> String {
             let tcp = TcpPacket::new(raw_packet);
             if let Some(tcp) = tcp {
                 format!(
-                    "{:<40}    {:<40}    {:<10}    {:<6}    {:<6}->{:<6}",
+                    "{:<40}    {:<40}    {:<10}    {:<6}    {:<6} -> {:<6}",
                     source_ip,
                     dest_ip,
                     "TCP",
@@ -297,7 +297,7 @@ fn get_packet_info(packet: &PacketInfo) -> String {
             let udp = UdpPacket::new(raw_packet);
             if let Some(udp) = udp {
                 format!(
-                    "{:<40}    {:<40}    {:<10}    {:<6}    {:<6}->{:<6}",
+                    "{:<40}    {:<40}    {:<10}    {:<6}    {:<6} -> {:<6}",
                     source_ip,
                     dest_ip,
                     "UDP",
