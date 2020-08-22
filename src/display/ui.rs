@@ -147,7 +147,7 @@ pub fn draw_ui(
         // Capture events from the keyboard
         match events.next()? {
             Event::Input(input) => match input {
-                Key::Char('q') => {
+                Key::Char('q') | Key::Ctrl('c') => {
                     terminal.clear()?;
                     running.store(false, Ordering::SeqCst);
                 }
