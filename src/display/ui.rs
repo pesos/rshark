@@ -64,8 +64,9 @@ pub fn draw_ui(
                 .unwrap()
                 .packets
                 .iter()
-                .map(|i| {
-                    let ptype = get_packet_info(i);
+                .enumerate()
+                .map(|(current_num, p)| {
+                    let ptype = get_packet_info(p, current_num + 1);
                     ListItem::new(Spans::from(ptype))
                         .style(Style::default().fg(Color::White).bg(Color::Black))
                 })
@@ -239,13 +240,13 @@ pub fn draw_ui(
 /// Get header of packet capture UI
 fn get_packets_ui_header() -> String {
     format!(
-        "{:<40}    {:<40}    {:<10}    {:<6}    {:<20}",
-        "Source", "Destination", "Protocol", "Length", "Info"
+        "{:<10}    {:<40}    {:<40}    {:<10}    {:<6}    {:<20}",
+        "Num", "Source", "Destination", "Protocol", "Length", "Info"
     )
 }
 
 /// Get brief packet info
-fn get_packet_info(packet: &PacketInfo) -> String {
+fn get_packet_info(packet: &PacketInfo, current_num: usize) -> String {
     match packet.packet_type {
         PacketType::TCP => {
             let raw_packet = packet.packet_data.packet();
@@ -266,7 +267,8 @@ fn get_packet_info(packet: &PacketInfo) -> String {
             let tcp = TcpPacket::new(raw_packet);
             if let Some(tcp) = tcp {
                 format!(
-                    "{:<40}    {:<40}    {:<10}    {:<6}    {:<6} -> {:<6}",
+                    "{:<10}    {:<40}    {:<40}    {:<10}    {:<6}    {:<6} -> {:<6}",
+                    current_num,
                     source_ip,
                     dest_ip,
                     "TCP",
@@ -297,7 +299,8 @@ fn get_packet_info(packet: &PacketInfo) -> String {
             let udp = UdpPacket::new(raw_packet);
             if let Some(udp) = udp {
                 format!(
-                    "{:<40}    {:<40}    {:<10}    {:<6}    {:<6} -> {:<6}",
+                    "{:<10}    {:<40}    {:<40}    {:<10}    {:<6}    {:<6} -> {:<6}",
+                    current_num,
                     source_ip,
                     dest_ip,
                     "UDP",
@@ -317,7 +320,8 @@ fn get_packet_info(packet: &PacketInfo) -> String {
 
             if let Some(arp) = arp {
                 format!(
-                    "{:<40}    {:<40}    {:<10}    {:<6}    {:?}",
+                    "{:<10}    {:<40}    {:<40}    {:<10}    {:<6}    {:?}",
+                    current_num,
                     arp.get_sender_hw_addr(),
                     arp.get_target_hw_addr(),
                     "ARP",
@@ -349,7 +353,8 @@ fn get_packet_info(packet: &PacketInfo) -> String {
             // TODO: Improve print information based on ICMP Type
             if let Some(icmp) = icmp {
                 format!(
-                    "{:<40}    {:<40}    {:<10}    {:<6}    {:?}",
+                    "{:<10}    {:<40}    {:<40}    {:<10}    {:<6}    {:?}",
+                    current_num,
                     source_ip,
                     dest_ip,
                     "ICMP",
