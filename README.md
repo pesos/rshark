@@ -49,7 +49,7 @@ OPTIONS:
 |g    |           | move cursor at begin |
 |G    |           | move cursor at end |
 |ESC  | LEFT      | reset cursor position |
-|Q    | CTRL+C    | quit program |
+|q    | CTRL+C    | quit program |
 |J    | TAB       | toggle focus between the panels: list of packets or single packet information |
 
 
