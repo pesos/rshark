@@ -44,13 +44,13 @@ OPTIONS:
 
 | key | alternate | description |
 |-----|-----------|-------------|
-|k    | UP        | move cursor up |
-|j    | DOWN      | move cursor down |
-|g    |           | move cursor at begin |
-|G    |           | move cursor at end |
-|ESC  | LEFT      | reset cursor position |
-|q    | CTRL+C    | quit program |
-|J    | TAB       | toggle focus between the panels: list of packets or single packet information |
+|<kbd>k</kbd> | <kbd>↑</kbd> | move cursor up |
+|<kbd>j</kbd> | <kbd>↓</kbd> | move cursor down |
+|<kbd>g</kbd> |              | move cursor at begin |
+|<kbd>G</kbd> |              | move cursor at end |
+|<kbd>ESC</kbd> | <kbd>←</kbd> | reset cursor position |
+|<kbd>q</kbd> | <kbd>CTRL</kbd>+<kbd>C</kbd> | quit program |
+|<kbd>J</kbd> | <kbd>TAB</kbd> | toggle focus between the panels: list of packets or single packet information |
 
 
 ## Support
