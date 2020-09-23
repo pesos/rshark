@@ -40,6 +40,19 @@ OPTIONS:
 2. Run the binary on a device, e.g. WiFi, must run as root.
 `sudo cargo run -- -i en0`
 
+### Keyboard bindings
+
+| key | alternate | description |
+|-----|-----------|-------------|
+|<kbd>k</kbd> | <kbd>↑</kbd> | move cursor up |
+|<kbd>j</kbd> | <kbd>↓</kbd> | move cursor down |
+|<kbd>g</kbd> |              | move cursor at begin |
+|<kbd>G</kbd> |              | move cursor at end |
+|<kbd>ESC</kbd> | <kbd>←</kbd> | reset cursor position |
+|<kbd>q</kbd> | <kbd>CTRL</kbd>+<kbd>C</kbd> | quit program |
+|<kbd>J</kbd> | <kbd>TAB</kbd> | toggle focus between the panels: list of packets or single packet information |
+
+
 ## Support
 
 Please open an issue and we'll try to help.
