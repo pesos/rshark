@@ -1,5 +1,5 @@
 use std::error::Error;
-use std::io::{self};
+use std::io;
 use std::sync::{atomic::AtomicBool, atomic::Ordering, Arc, RwLock};
 
 use super::events::{Event, Events};
@@ -64,8 +64,9 @@ pub fn draw_ui(
                 .unwrap()
                 .packets
                 .iter()
-                .map(|i| {
-                    let ptype = get_packet_info(i);
+                .enumerate()
+                .map(|(current_num, p)| {
+                    let ptype = get_packet_info(p, current_num + 1);
                     ListItem::new(Spans::from(ptype))
                         .style(Style::default().fg(Color::White).bg(Color::Black))
                 })
@@ -147,14 +148,14 @@ pub fn draw_ui(
         // Capture events from the keyboard
         match events.next()? {
             Event::Input(input) => match input {
-                Key::Char('q') => {
+                Key::Char('q') | Key::Ctrl('c') => {
                     terminal.clear()?;
                     running.store(false, Ordering::SeqCst);
                 }
-                Key::Left => {
+                Key::Left | Key::Esc => {
                     packets_state.select(None);
                 }
-                Key::Down => {
+                Key::Down | Key::Char('j') => {
                     if packets_state_selected {
                         let i = match packets_state.selected() {
                             Some(i) => {
@@ -181,12 +182,12 @@ pub fn draw_ui(
                         packets_info_state.select(Some(i));
                     }
                 }
-                Key::Up => {
+                Key::Up | Key::Char('k') => {
                     if packets_state_selected {
                         let i = match packets_state.selected() {
                             Some(i) => {
                                 if i == 0 {
-                                    net_info.read().unwrap().packets.len() - 1
+                                    net_info.read().unwrap().packets.len().saturating_sub(1)
                                 } else {
                                     i - 1
                                 }
@@ -198,7 +199,7 @@ pub fn draw_ui(
                         let i = match packets_info_state.selected() {
                             Some(i) => {
                                 if i == 0 {
-                                    packets_info_len - 1
+                                    packets_info_len.saturating_sub(1)
                                 } else {
                                     i - 1
                                 }
@@ -208,7 +209,23 @@ pub fn draw_ui(
                         packets_info_state.select(Some(i));
                     }
                 }
-                Key::Char('\t') => {
+                Key::Char('g') => {
+                    if packets_state_selected {
+                        packets_state.select(Some(0));
+                    } else {
+                        packets_info_state.select(Some(0));
+                    }
+                }
+                Key::Char('G') => {
+                    if packets_state_selected {
+                        packets_state.select(Some(
+                            net_info.read().unwrap().packets.len().saturating_sub(1),
+                        ));
+                    } else {
+                        packets_info_state.select(Some(packets_info_len.saturating_sub(1)));
+                    }
+                }
+                Key::Char('\t') | Key::Char('J') => {
                     packets_state_selected = !packets_state_selected;
                 }
                 _ => {}
@@ -223,13 +240,13 @@ pub fn draw_ui(
 /// Get header of packet capture UI
 fn get_packets_ui_header() -> String {
     format!(
-        "{:<20}    {:<20}    {:<10}    {:<6}    {:<20}",
-        "Source", "Destination", "Protocol", "Length", "Info"
+        "{:<10}    {:<40}    {:<40}    {:<10}    {:<6}    {:<20}",
+        "Num", "Source", "Destination", "Protocol", "Length", "Info"
     )
 }
 
 /// Get brief packet info
-fn get_packet_info(packet: &PacketInfo) -> String {
+fn get_packet_info(packet: &PacketInfo, current_num: usize) -> String {
     match packet.packet_type {
         PacketType::TCP => {
             let raw_packet = packet.packet_data.packet();
@@ -250,7 +267,8 @@ fn get_packet_info(packet: &PacketInfo) -> String {
             let tcp = TcpPacket::new(raw_packet);
             if let Some(tcp) = tcp {
                 format!(
-                    "{:<20}    {:<20}    {:<10}    {:<6}    {:<6}->{:<6}",
+                    "{:<10}    {:<40}    {:<40}    {:<10}    {:<6}    {:<6} -> {:<6}",
+                    current_num,
                     source_ip,
                     dest_ip,
                     "TCP",
@@ -259,7 +277,7 @@ fn get_packet_info(packet: &PacketInfo) -> String {
                     tcp.get_destination()
                 )
             } else {
-                format!("TCP packet malformed")
+                "TCP packet malformed".to_string()
             }
         }
         PacketType::UDP => {
@@ -281,7 +299,8 @@ fn get_packet_info(packet: &PacketInfo) -> String {
             let udp = UdpPacket::new(raw_packet);
             if let Some(udp) = udp {
                 format!(
-                    "{:<20}    {:<20}    {:<10}    {:<6}    {:<6}->{:<6}",
+                    "{:<10}    {:<40}    {:<40}    {:<10}    {:<6}    {:<6} -> {:<6}",
+                    current_num,
                     source_ip,
                     dest_ip,
                     "UDP",
@@ -290,7 +309,7 @@ fn get_packet_info(packet: &PacketInfo) -> String {
                     udp.get_destination()
                 )
             } else {
-                format!("UDP packet malformed")
+                "UDP packet malformed".to_string()
             }
         }
         PacketType::ARP => {
@@ -301,7 +320,8 @@ fn get_packet_info(packet: &PacketInfo) -> String {
 
             if let Some(arp) = arp {
                 format!(
-                    "{:<20}    {:<20}    {:<10}    {:<6}    {:?}",
+                    "{:<10}    {:<40}    {:<40}    {:<10}    {:<6}    {:?}",
+                    current_num,
                     arp.get_sender_hw_addr(),
                     arp.get_target_hw_addr(),
                     "ARP",
@@ -309,7 +329,7 @@ fn get_packet_info(packet: &PacketInfo) -> String {
                     arp.get_operation()
                 )
             } else {
-                format!("ARP malformed")
+                "ARP malformed".to_string()
             }
         }
         PacketType::ICMP => {
@@ -333,7 +353,8 @@ fn get_packet_info(packet: &PacketInfo) -> String {
             // TODO: Improve print information based on ICMP Type
             if let Some(icmp) = icmp {
                 format!(
-                    "{:<20}    {:<20}    {:<10}    {:<6}    {:?}",
+                    "{:<10}    {:<40}    {:<40}    {:<10}    {:<6}    {:?}",
+                    current_num,
                     source_ip,
                     dest_ip,
                     "ICMP",
@@ -341,11 +362,11 @@ fn get_packet_info(packet: &PacketInfo) -> String {
                     icmp.get_icmp_code()
                 )
             } else {
-                format!("ICMP packet malformed")
+                "ICMP packet malformed".to_string()
             }
         }
         // TODO: Print information for ICMP
-        PacketType::ICMPv6 => format!("ICMPv6"),
+        PacketType::ICMPv6 => "ICMPv6".to_string(),
     }
 }
 

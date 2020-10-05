@@ -8,13 +8,13 @@ A terminal UI based packet monitoring tool written in Rust.
 
 ## Installation
 
-**Works only on Linux for now.**
+**Works only on Unix-like OSes for now.**
 
 **Prerequisites**: `rust` and `cargo`.
 
 1. `git clone` this repository.
 2. `cd rshark`
-3. `cargo install` should install the binary. Make sure `$HOME/.cargo/bin` is in your `$PATH` variable.
+3. `cargo install --path .` should install the binary. Make sure `$HOME/.cargo/bin` is in your `$PATH` variable.
 
 ## Usage
 
@@ -32,6 +32,27 @@ OPTIONS:
 
 **Note that since `rshark` sniffs network packets, it requires root privileges**
 
+### How to Run
+1. Find a network device to monitor. To find one using OSX:
+
+`networksetup -listallhardwareports`
+
+2. Run the binary on a device, e.g. WiFi, must run as root.
+`sudo cargo run -- -i en0`
+
+### Keyboard bindings
+
+| key | alternate | description |
+|-----|-----------|-------------|
+|<kbd>k</kbd> | <kbd>↑</kbd> | move cursor up |
+|<kbd>j</kbd> | <kbd>↓</kbd> | move cursor down |
+|<kbd>g</kbd> |              | move cursor at begin |
+|<kbd>G</kbd> |              | move cursor at end |
+|<kbd>ESC</kbd> | <kbd>←</kbd> | reset cursor position |
+|<kbd>q</kbd> | <kbd>CTRL</kbd>+<kbd>C</kbd> | quit program |
+|<kbd>J</kbd> | <kbd>TAB</kbd> | toggle focus between the panels: list of packets or single packet information |
+
+
 ## Support
 
 Please open an issue and we'll try to help.
@@ -39,7 +60,7 @@ Please open an issue and we'll try to help.
 ## Roadmap
 
 * [x] Add code formatting check in CI.
-* [ ] Add `clippy` checks for better and idiomatic Rust code.
+* [x] Add `clippy` checks for better and idiomatic Rust code.
 * [ ] Maybe a separate thread for running a timer, to get time of arrival of packets.
 * [ ] Use the `insta` crate for snapshot testing(or UI testing).
 * [ ] Gracefully handle errors instead of just panicking.

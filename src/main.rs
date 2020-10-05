@@ -4,7 +4,6 @@ extern crate pnet;
 mod display;
 mod network;
 
-use std::io::{self, Write};
 use std::process;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, RwLock};
@@ -34,7 +33,7 @@ fn main() {
     let iface_name = match matches.value_of("interface") {
         Some(iface_name) => iface_name.to_string(),
         None => {
-            writeln!(io::stderr(), "Network interface not provided").unwrap();
+            eprintln!("Network interface not provided");
             process::exit(1);
         }
     };
@@ -43,7 +42,7 @@ fn main() {
     let interface = match get_valid_interface(iface_name, interfaces()) {
         Some(interface) => interface,
         None => {
-            writeln!(io::stderr(), "Invalid network interface.").unwrap();
+            eprintln!("Invalid network interface");
             process::exit(1);
         }
     };
@@ -54,11 +53,11 @@ fn main() {
     // Maintains packets, num of captured packets and num of dropped packets
     let net_info = Arc::new(RwLock::new(NetworkInfo::new()));
 
-    let network_net_info = net_info.clone();
-    let ui_net_info = net_info.clone();
+    let network_net_info = Arc::clone(&net_info);
+    let ui_net_info = Arc::clone(&net_info);
 
-    let network_running = running.clone();
-    let display_running = running.clone();
+    let network_running = Arc::clone(&running);
+    let display_running = Arc::clone(&running);
 
     let network_sniffer_thread = thread::spawn(|| {
         start_packet_sniffer(interface, network_net_info, network_running);
