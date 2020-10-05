@@ -362,7 +362,7 @@ fn get_packet_info(packet: &PacketInfo, current_num: usize) -> String {
                     icmp.get_icmp_code()
                 )
             } else {
-                "ICMPv6 packet malformed".to_string()
+                "ICMP packet malformed".to_string()
             }
         }
         // TODO: Print information for ICMP
@@ -396,7 +396,7 @@ fn get_packet_info(packet: &PacketInfo, current_num: usize) -> String {
                     icmpv6.get_icmpv6_code()
                 )
             } else {
-                "ICMP packet malformed".to_string()
+                "ICMPv6 packet malformed".to_string()
             }
         }
     }
