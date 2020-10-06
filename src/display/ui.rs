@@ -366,7 +366,39 @@ fn get_packet_info(packet: &PacketInfo, current_num: usize) -> String {
             }
         }
         // TODO: Print information for ICMP
-        PacketType::ICMPv6 => "ICMPv6".to_string(),
+        PacketType::ICMPv6 => {
+            let raw_packet = packet.packet_data.packet();
+            let payload = packet.packet_data.payload();
+
+            let source_ip = if let Some(ip) = packet.source_ip {
+                ip.to_string()
+            } else {
+                "NA".to_string()
+            };
+
+            let dest_ip = if let Some(ip) = packet.dest_ip {
+                ip.to_string()
+            } else {
+                "NA".to_string()
+            };
+
+            let icmpv6 = Icmpv6Packet::new(raw_packet);
+
+            // TODO: Improve print information based on ICMP Type
+            if let Some(icmpv6) = icmpv6 {
+                format!(
+                    "{:<10}    {:<40}    {:<40}    {:<10}    {:<6}    {:?}",
+                    current_num,
+                    source_ip,
+                    dest_ip,
+                    "ICMPv6",
+                    payload.to_vec().len(),
+                    icmpv6.get_icmpv6_code()
+                )
+            } else {
+                "ICMPv6 packet malformed".to_string()
+            }
+        }
     }
 }
 
@@ -479,7 +511,30 @@ fn get_packet_description(packet: &PacketInfo) -> Vec<String> {
             }
         }
         // TODO: Packet description for ICMPv6 packets
-        PacketType::ICMPv6 => pkt_desc.push("None".to_string()),
+        PacketType::ICMPv6 => {
+            let raw_packet = packet.packet_data.packet();
+            // let payload = packet.packet_data.payload();
+
+            if let Some(ip) = packet.source_ip {
+                pkt_desc.push(format!("Source IP: {}", ip.to_string()));
+            } else {
+                pkt_desc.push(format!("Source IP: {}", "NA".to_string()));
+            }
+
+            if let Some(ip) = packet.dest_ip {
+                pkt_desc.push(format!("Destination IP: {}", ip.to_string()));
+            } else {
+                pkt_desc.push(format!("Destination IP: {}", "NA".to_string()));
+            }
+
+            let icmpv6 = Icmpv6Packet::new(raw_packet);
+
+            // TODO: Expand description based on ICMP type
+            if let Some(icmpv6) = icmpv6 {
+                pkt_desc.push(format!("ICMPv6 Type: {:?}", icmpv6.get_icmpv6_type()));
+                pkt_desc.push(format!("ICMPv6 Code: {:?}", icmpv6.get_icmpv6_code()));
+            }
+        }
     };
 
     pkt_desc
