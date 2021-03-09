@@ -22,10 +22,10 @@ fn main() {
         .about("Terminal UI based simple packet monitoring tool")
         .arg(
             Arg::with_name("interface")
-                .short('i')
+                .short("i")
                 .long("interface")
                 .value_name("INTERFACE")
-                .about("Sets network interface to capture packets on")
+                .help("Sets network interface to capture packets on")
                 .takes_value(true),
         )
         .get_matches();
