@@ -5,7 +5,7 @@ mod display;
 mod network;
 
 use std::process;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, RwLock};
 use std::thread;
 
@@ -49,15 +49,18 @@ fn main() {
 
     // Variable which is used to notify whether threads should be running
     let running = Arc::new(AtomicBool::new(true));
-
     // Maintains packets, num of captured packets and num of dropped packets
     let net_info = Arc::new(RwLock::new(NetworkInfo::new()));
-
+    
     let network_net_info = Arc::clone(&net_info);
     let ui_net_info = Arc::clone(&net_info);
-
+    
     let network_running = Arc::clone(&running);
     let display_running = Arc::clone(&running);
+    
+    ctrlc::set_handler( move || {
+        running.store(false, Ordering::SeqCst);
+    }).expect("Error");
 
     let network_sniffer_thread = thread::spawn(|| {
         start_packet_sniffer(interface, network_net_info, network_running);

@@ -10,6 +10,7 @@ edition = "2018"
 clap = "2.33.3"
 tui = "0.10"
 termion = "1.5"
+ctrlc = { version = "3.0", features = ["termination"] }
 
 [dependencies.pnet]
 version = "0.26.0"
